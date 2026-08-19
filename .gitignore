@@ -1,0 +1,18 @@
+# Arduino build artifacts
+build/
+*.hex
+*.bin
+*.elf
+*.map
+*.o
+*.d
+*.orig
+
+# Arduino/VS Code editor state
+.vscode/
+
+# macOS
+.DS_Store
+
+# Claude Code local (machine-specific) settings
+.claude/settings.local.json
