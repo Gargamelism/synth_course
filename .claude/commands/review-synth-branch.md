@@ -31,5 +31,12 @@ Flag anything in the Core-0 audio task or per-sample oscillator code that could 
 - Header guards / `#pragma once` present on new headers; no missing includes relying on transitive includes.
 - Integer overflow, signed/unsigned mismatches, and array bounds on any new indexing logic.
 
-## 5. Report findings
+## 5. Test coverage for hardware-independent code
+This project's host-side tests live in `test/` (see `test/README.md`) and run with `test/run.sh` — no ESP32 toolchain needed, so there's no excuse for hardware-independent logic to go untested. "Hardware-independent" means it doesn't touch `Arduino.h` APIs (`analogRead`, `digitalWrite`, `Serial`, `Wire`, etc.), FreeRTOS primitives, or any peripheral (I2S/I2C/ADC) — pure math/logic like `oscillator.cpp` and `controls_math.cpp`.
+- New or changed pure-logic functions (new files, or functions added to existing hardware-independent files like `oscillator.cpp`/`controls_math.cpp`) should have a corresponding/updated `test/test_<name>.cpp`, following the existing `test_<name>.cpp` ↔ `../<name>.cpp` naming convention that `test/run.sh` discovers automatically.
+- If a diff changes the *behavior* of an already-tested pure function (e.g. the EMA/hysteresis constants' effect in `smoothValue`, the DDS phase math in `Oscillator`, clipping in `mixOscillators`) without updating the matching test, flag it — the test is now either stale or silently not exercising the new behavior.
+- If a diff adds non-trivial pure math/logic *inline* inside a hardware-bound file (e.g. inside `controlsUpdate()` or `audioTask()`) instead of extracting it the way `smoothValue`/`mapPitchHz` were pulled out of `controls.cpp`, flag it as a missed opportunity — that logic could be host-tested if extracted but isn't.
+- Don't ask for tests on code that's inherently hardware-bound (I2S/I2C calls, ADC reads, display rendering, task/timing setup) — that's out of reach for host tests and stays covered by the manual on-target checklist in `plans/2026-08-19_initial_synth.md`.
+
+## 6. Report findings
 Use the `ReportFindings` tool. Rank findings most-severe first, with anything that risks an audible glitch (blocking, allocation, or unbounded work in the Core-0 hot path, or an unprotected cross-core race) always ranked above general style/practice findings. If nothing survives review, call it with an empty findings array.
