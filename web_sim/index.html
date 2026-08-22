@@ -2,21 +2,33 @@
 <!--
   Interactive browser simulator for the 3-osc ESP32 synth (../synth_course.ino).
 
-  This is a 1:1 port of the firmware's DSP/control math to JS, not a
-  from-scratch reimplementation:
-    - oscillator.h/.cpp  -> SynthProcessor (sine table + phase-accumulator
-                             DDS + mixOscillators), run inside an
-                             AudioWorkletProcessor as a stand-in for the
-                             Core-0 audioTask block loop.
-    - controls_math.cpp  -> smoothValue()/mapPitchHz(), run on a fixed
-                             interval on the main thread as a stand-in for
-                             Core-1's loop()->controlsUpdate().
-    - notes.h             -> freqToNoteName(), used for the OLED note names.
-    - display.cpp         -> drawDisplay(), reproduces displayUpdate()'s
-                             exact text layout on a 128x64 canvas standing
-                             in for the SSD1306.
-    - pins.h               -> the CONST block below. Manually mirrored, not
-                             auto-synced: if you change pins.h, update here.
+  Split into 4 files:
+    - index.html   markup only.
+    - style.css    all styles.
+    - app.js       1:1 port of the firmware's DSP/control math to JS, not a
+                   from-scratch reimplementation:
+                     - oscillator.h/.cpp  -> SynthProcessor (sine table + phase-
+                                              accumulator DDS + mixOscillators),
+                                              run inside an AudioWorkletProcessor
+                                              as a stand-in for the Core-0
+                                              audioTask block loop.
+                     - controls_math.cpp  -> smoothValue()/mapPitchHz(), run on
+                                              a fixed interval on the main thread
+                                              as a stand-in for Core-1's
+                                              loop()->controlsUpdate().
+                     - notes.h             -> freqToNoteName(), used for the
+                                              OLED note names.
+                     - display.cpp         -> drawDisplay(), reproduces
+                                              displayUpdate()'s exact text
+                                              layout on a 128x64 canvas standing
+                                              in for the SSD1306.
+                     - pins.h               -> the CONST block. Manually
+                                              mirrored, not auto-synced: if you
+                                              change pins.h, update here.
+    - analyzer.js  AnalyserNode wiring + oscilloscope canvas draw loop.
+                   Explicitly NOT a firmware port — the real hardware has no
+                   scope; this is a browser-only addition for visualizing the
+                   mixed output.
 
   No build step, no external dependencies. Open directly in a browser.
   If a browser blocks a blob: AudioWorklet module under file://, serve this
@@ -27,121 +39,7 @@
 <head>
 <meta charset="UTF-8">
 <title>3-OSC Synth Simulator</title>
-<style>
-  :root {
-    color-scheme: dark;
-    --bg: #14171c;
-    --panel: #1d2128;
-    --border: #333a44;
-    --text: #d8dee6;
-    --accent: #6cf0a8;
-    --muted: #838d99;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 24px;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-  h1 {
-    font-size: 18px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: 0.02em;
-  }
-  .sub {
-    color: var(--muted);
-    font-size: 13px;
-    margin-top: -12px;
-  }
-  #oledWrap {
-    background: #000;
-    padding: 14px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    box-shadow: 0 0 0 1px #000 inset, 0 4px 18px rgba(0,0,0,0.5);
-  }
-  #oled {
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-    width: 384px;
-    height: 192px;
-    display: block;
-  }
-  #power {
-    appearance: none;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    padding: 10px 22px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  #power.on {
-    background: var(--accent);
-    color: #08130d;
-    border-color: var(--accent);
-  }
-  #power:active { transform: translateY(1px); }
-  .rack {
-    display: flex;
-    gap: 18px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 22px;
-  }
-  .osc {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 0 6px;
-    border-right: 1px solid var(--border);
-  }
-  .osc:last-child { border-right: none; }
-  .osc h2 {
-    font-size: 13px;
-    margin: 0;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-  .ctrl {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .ctrl label {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .ctrl input[type=range] {
-    writing-mode: vertical-lr;
-    direction: rtl;
-    width: 20px;
-    height: 130px;
-    accent-color: var(--accent);
-  }
-  .readout {
-    font-family: "SF Mono", Menlo, Consolas, monospace;
-    font-size: 12px;
-    color: var(--text);
-    min-width: 74px;
-    text-align: center;
-    white-space: pre;
-  }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -155,266 +53,13 @@
 
 <div class="rack" id="rack"></div>
 
-<script>
-"use strict";
+<div id="scopeWrap">
+  <div class="scope"><div class="scopeLabel">OSC 1</div><canvas id="scope0" width="190" height="120"></canvas></div>
+  <div class="scope"><div class="scopeLabel">OSC 2</div><canvas id="scope1" width="190" height="120"></canvas></div>
+  <div class="scope"><div class="scopeLabel">OSC 3</div><canvas id="scope2" width="190" height="120"></canvas></div>
+</div>
 
-// ---- pins.h mirror -------------------------------------------------------
-const NUM_OSCILLATORS   = 3;
-const SAMPLE_RATE_HZ    = 44100;
-const SINE_TABLE_SIZE   = 256;
-const SINE_TABLE_AMPLITUDE = 9000;
-const FREQ_MIN_HZ = 80.0;
-const FREQ_MAX_HZ = 1000.0;
-const ADC_RESOLUTION_BITS = 12;
-const ADC_MAX_COUNT = (1 << ADC_RESOLUTION_BITS) - 1; // 4095
-const ADC_EMA_ALPHA = 0.15;
-const ADC_HYSTERESIS_COUNTS = 4;
-const DISPLAY_REFRESH_MS = 100;
-const OLED_WIDTH  = 128;
-const OLED_HEIGHT = 64;
-const OLED_ROW_HEIGHT_PX = 16;
-const PHASE_ACCUMULATOR_RANGE = 4294967296.0; // 2^32, oscillator.h
-
-// ---- notes.h port ---------------------------------------------------------
-const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-function freqToNoteName(freqHz) {
-  const note = Math.round(12.0 * Math.log2(freqHz / 440.0) + 69.0);
-  const nameIndex = ((note % 12) + 12) % 12;
-  const octave = Math.floor(note / 12) - 1;
-  return NOTE_NAMES[nameIndex] + octave;
-}
-
-// ---- controls_math.cpp port ------------------------------------------------
-// state = { filtered, lastRaw }, mutated in place like the C++ out-params.
-function smoothValue(raw, state, hysteresisCounts, emaAlpha) {
-  if (Math.abs(raw - state.lastRaw) >= hysteresisCounts) {
-    state.filtered = state.filtered * (1.0 - emaAlpha) + raw * emaAlpha;
-    state.lastRaw = raw;
-  }
-  return state.filtered;
-}
-
-function mapPitchHz(pitchNorm, freqMinHz, freqMaxHz) {
-  return freqMinHz * Math.pow(freqMaxHz / freqMinHz, pitchNorm);
-}
-
-function clamp01(x) { return Math.min(1, Math.max(0, x)); }
-
-// A real analogRead() always carries a few counts of ADC noise — pins.h
-// sizes ADC_HYSTERESIS_COUNTS specifically to sit "above typical ADC noise
-// floor" so that noise gets filtered out, but the exact same noise is what
-// lets smoothValue() actually finish converging once a pot stops moving:
-// with a perfectly noiseless raw reading (a mouse-driven slider), the
-// hysteresis gate can permanently freeze part-way once the input goes
-// still, so a fader could visibly get stuck short of its true min/max.
-// Reusing ADC_HYSTERESIS_COUNTS as the dither range (rather than a made-up
-// constant) reliably re-opens the gate until it settles at the true value.
-function adcNoise() {
-  return Math.floor(Math.random() * (2 * ADC_HYSTERESIS_COUNTS + 1)) - ADC_HYSTERESIS_COUNTS;
-}
-
-// ---- AudioWorkletProcessor source (oscillator.h/.cpp + audio_task.cpp) ----
-// Built as a string (constants inlined) so it can be loaded from a blob:
-// URL and this stays a single, offline-friendly file.
-const workletSource = `
-class SynthProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
-    const SINE_TABLE_SIZE = ${SINE_TABLE_SIZE};
-    const SINE_TABLE_AMPLITUDE = ${SINE_TABLE_AMPLITUDE};
-    const NUM_OSCILLATORS = ${NUM_OSCILLATORS};
-    const SAMPLE_RATE_HZ = ${SAMPLE_RATE_HZ};
-    const PHASE_ACCUMULATOR_RANGE = ${PHASE_ACCUMULATOR_RANGE};
-
-    this.NUM_OSCILLATORS = NUM_OSCILLATORS;
-    this.SAMPLE_RATE_HZ = SAMPLE_RATE_HZ;
-    this.PHASE_ACCUMULATOR_RANGE = PHASE_ACCUMULATOR_RANGE;
-
-    // initSineTable()
-    this.sineTable = new Int16Array(SINE_TABLE_SIZE);
-    for (let i = 0; i < SINE_TABLE_SIZE; i++) {
-      const phase = (2.0 * Math.PI * i) / SINE_TABLE_SIZE;
-      this.sineTable[i] = Math.round(Math.sin(phase) * SINE_TABLE_AMPLITUDE);
-    }
-
-    // Oscillator phase_/phaseInc_, one per voice.
-    this.phase = new Uint32Array(NUM_OSCILLATORS);
-    this.phaseInc = new Uint32Array(NUM_OSCILLATORS);
-    this.vol = new Float32Array(NUM_OSCILLATORS);
-
-    this.port.onmessage = (e) => {
-      const { freqHz, volume } = e.data;
-      for (let i = 0; i < NUM_OSCILLATORS; i++) {
-        // Oscillator::setFrequency
-        this.phaseInc[i] = freqHz[i] * (this.PHASE_ACCUMULATOR_RANGE / this.SAMPLE_RATE_HZ);
-        this.vol[i] = volume[i];
-      }
-    };
-  }
-
-  process(inputs, outputs) {
-    const output = outputs[0];
-    const left = output[0];
-    const right = output.length > 1 ? output[1] : null;
-    const NUM_OSCILLATORS = this.NUM_OSCILLATORS;
-    const samples = new Int16Array(NUM_OSCILLATORS);
-
-    for (let frame = 0; frame < left.length; frame++) {
-      // Oscillator::nextSample() per voice
-      for (let i = 0; i < NUM_OSCILLATORS; i++) {
-        const index = (this.phase[i] >>> 24) & 0xFF; // top 8 bits, 256-entry table
-        samples[i] = this.sineTable[index];
-        this.phase[i] = (this.phase[i] + this.phaseInc[i]) >>> 0;
-      }
-
-      // mixOscillators()
-      let mixed = 0;
-      for (let i = 0; i < NUM_OSCILLATORS; i++) {
-        mixed += samples[i] * this.vol[i];
-      }
-      if (mixed > 32767) mixed = 32767;
-      if (mixed < -32768) mixed = -32768;
-
-      const sampleFloat = mixed / 32768;
-      left[frame] = sampleFloat;
-      if (right) right[frame] = sampleFloat;
-    }
-    return true;
-  }
-}
-registerProcessor('synth-processor', SynthProcessor);
-`;
-
-// ---- Per-oscillator UI + control-loop state --------------------------------
-const rack = document.getElementById("rack");
-const volSliders = [];
-const pitchSliders = [];
-const volReadouts = [];
-const pitchReadouts = [];
-const volState = [];
-const pitchState = [];
-const freqHz = new Array(NUM_OSCILLATORS).fill(FREQ_MIN_HZ);
-const volume = new Array(NUM_OSCILLATORS).fill(0);
-
-for (let i = 0; i < NUM_OSCILLATORS; i++) {
-  const osc = document.createElement("div");
-  osc.className = "osc";
-  osc.innerHTML = `
-    <h2>OSC ${i + 1}</h2>
-    <div class="ctrl">
-      <label>Pitch</label>
-      <input type="range" min="0" max="${ADC_MAX_COUNT}" value="0" id="pitch${i}">
-      <div class="readout" id="pitchOut${i}"></div>
-    </div>
-    <div class="ctrl">
-      <label>Volume</label>
-      <input type="range" min="0" max="${ADC_MAX_COUNT}" value="0" id="vol${i}">
-      <div class="readout" id="volOut${i}"></div>
-    </div>
-  `;
-  rack.appendChild(osc);
-
-  const pitchInput = osc.querySelector(`#pitch${i}`);
-  const volInput = osc.querySelector(`#vol${i}`);
-  pitchSliders.push(pitchInput);
-  volSliders.push(volInput);
-  pitchReadouts.push(osc.querySelector(`#pitchOut${i}`));
-  volReadouts.push(osc.querySelector(`#volOut${i}`));
-
-  // controlsBegin(): seed filtered/lastRaw from the initial reading.
-  const initialRaw = parseInt(volInput.value, 10);
-  const initialPitchRaw = parseInt(pitchInput.value, 10);
-  volState.push({ filtered: initialRaw, lastRaw: initialRaw });
-  pitchState.push({ filtered: initialPitchRaw, lastRaw: initialPitchRaw });
-}
-
-// ---- controlsUpdate() port, ticking on the main thread ---------------------
-function controlsUpdate() {
-  for (let i = 0; i < NUM_OSCILLATORS; i++) {
-    const volRaw = parseInt(volSliders[i].value, 10) + adcNoise();
-    const pitchRaw = parseInt(pitchSliders[i].value, 10) + adcNoise();
-
-    const volFiltered = smoothValue(volRaw, volState[i], ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-    const pitchFiltered = smoothValue(pitchRaw, pitchState[i], ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-
-    volume[i] = clamp01(volFiltered / ADC_MAX_COUNT);
-
-    const pitchNorm = clamp01(pitchFiltered / ADC_MAX_COUNT);
-    freqHz[i] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
-
-    volReadouts[i].textContent = `${Math.round(volume[i] * 100)}%`;
-    pitchReadouts[i].textContent = `${Math.round(freqHz[i])}Hz`;
-  }
-
-  if (workletNode) {
-    workletNode.port.postMessage({ freqHz: freqHz.slice(), volume: volume.slice() });
-  }
-}
-setInterval(controlsUpdate, 16); // ~Core-1 loop() cadence
-
-// ---- display.cpp port: draw the OLED panel every DISPLAY_REFRESH_MS -------
-const canvas = document.getElementById("oled");
-const ctx = canvas.getContext("2d");
-
-function drawDisplay() {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, OLED_WIDTH, OLED_HEIGHT);
-  ctx.fillStyle = "#f5f5f5";
-  ctx.font = "8px monospace";
-  ctx.textBaseline = "top";
-  ctx.fillText("3-OSC SYNTH", 0, 0);
-
-  for (let i = 0; i < NUM_OSCILLATORS; i++) {
-    const note = freqToNoteName(freqHz[i]);
-    const freqStr = String(Math.trunc(freqHz[i])).padStart(4, " ");
-    const noteStr = note.padEnd(3, " ");
-    const volStr = String(Math.trunc(volume[i] * 100)).padStart(3, " ");
-    const line = `O${i + 1} ${freqStr}Hz ${noteStr} V:${volStr}%`;
-    ctx.fillText(line, 0, OLED_ROW_HEIGHT_PX * (i + 1));
-  }
-}
-setInterval(drawDisplay, DISPLAY_REFRESH_MS);
-drawDisplay();
-
-// ---- Audio start/mute (AudioContext requires a user gesture) --------------
-let audioCtx = null;
-let workletNode = null;
-const powerBtn = document.getElementById("power");
-const statusEl = document.getElementById("status");
-
-powerBtn.addEventListener("click", async () => {
-  try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: SAMPLE_RATE_HZ });
-      const blobUrl = URL.createObjectURL(new Blob([workletSource], { type: "application/javascript" }));
-      await audioCtx.audioWorklet.addModule(blobUrl);
-      workletNode = new AudioWorkletNode(audioCtx, "synth-processor", {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [2],
-      });
-      workletNode.connect(audioCtx.destination);
-      workletNode.port.postMessage({ freqHz: freqHz.slice(), volume: volume.slice() });
-      powerBtn.textContent = "Mute";
-      powerBtn.classList.add("on");
-      statusEl.textContent = "Audio running. All 3 oscillators boot at Volume 0 — raise a Volume fader to hear a tone.";
-      return;
-    }
-
-    if (audioCtx.state === "running") {
-      await audioCtx.suspend();
-      powerBtn.textContent = "Unmute";
-      powerBtn.classList.remove("on");
-    } else {
-      await audioCtx.resume();
-      powerBtn.textContent = "Mute";
-      powerBtn.classList.add("on");
-    }
-  } catch (err) {
-    statusEl.textContent = `Audio failed to start: ${err.message || err}. If you opened this file directly (file://), try serving it instead: python3 -m http.server, then open http://localhost:8000/.`;
-    console.error(err);
-  }
-});
-</script>
+<script src="app.js"></script>
+<script src="analyzer.js"></script>
 </body>
 </html>
