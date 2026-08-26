@@ -1,17 +1,20 @@
 #pragma once
 
-// Pin map for ESP32-C3 (QFN32, GPIO0-10/18-21 broken out, GPIO11-17 reserved
-// for internal flash). All assignments below stay within GPIO0-10 to avoid
-// the C3's dedicated USB-Serial/JTAG pins (GPIO18/19).
+// Pin map for the ESP32-C3 SuperMini board (QFN32, GPIO0-10/18-21 broken
+// out, GPIO11-17 reserved for internal flash). GPIO8 is the onboard LED and
+// GPIO9 is the BOOT button on this board — both left free of other duties.
+// The rest stays within GPIO0-10 to avoid the C3's dedicated
+// USB-Serial/JTAG pins (GPIO18/19).
 
 // I2S DAC (PCM5102 breakout)
 #define PIN_I2S_BCK  6
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10
 
-// OLED (SSD1306 128x64, I2C) — default Wire pins on ESP32-C3
-#define PIN_OLED_SDA 8
-#define PIN_OLED_SCL 9
+// OLED (SSD1306 128x64, I2C) — moved off the board's default 8/9 since
+// those are the onboard LED and BOOT button here, not general-purpose.
+#define PIN_OLED_SDA 20
+#define PIN_OLED_SCL 21
 #define OLED_WIDTH   128
 #define OLED_HEIGHT  64
 #define OLED_I2C_ADDR 0x3C
@@ -26,6 +29,9 @@ const int OLED_ROW_HEIGHT_PX = 16; // per-oscillator row spacing, below the titl
 #define PIN_POT_PITCH1 3
 #define PIN_POT_PITCH2 4
 #define PIN_POT_PITCH3 5 // ADC2 channel 0 — the C3's only ADC2 pin
+
+// Liveness LED — the SuperMini's onboard LED. Active-low: LOW turns it on.
+#define PIN_STATUS_LED 8
 
 // Audio constants
 #define NUM_OSCILLATORS   3
@@ -48,6 +54,10 @@ const int ADC_MAX_COUNT = (1 << ADC_RESOLUTION_BITS) - 1;
 
 // Display refresh cadence
 #define DISPLAY_REFRESH_MS 100
+
+// Liveness-blink half-period — PIN_STATUS_LED toggles every this many ms,
+// giving a ~1Hz blink independent of DISPLAY_REFRESH_MS.
+#define BLINK_HALF_PERIOD_MS 500
 
 // USB serial debug output baud rate
 #define SERIAL_BAUD_RATE 115200

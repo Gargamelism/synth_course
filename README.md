@@ -1,10 +1,10 @@
 # synth_course
 
-3-oscillator sine synth on ESP32: 3 volumes + 3 pitches via potentiometers, audio out over I2S to an external DAC, live status on a 0.96" OLED.
+3-oscillator sine synth on the ESP32-C3 SuperMini: 3 volumes + 3 pitches via potentiometers, audio out over I2S to an external DAC, live status on a 0.96" OLED, and a blinking onboard LED as a liveness indicator.
 
 ## Hardware
 
-- ESP32 dev board
+- ESP32-C3 SuperMini dev board (onboard LED on GPIO8 used as a liveness indicator)
 - PCM5102 I2S DAC breakout
 - SSD1306 128x64 OLED (I2C)
 - 6x potentiometers (3 volume, 3 pitch)
@@ -15,7 +15,7 @@ See `pins.h` for wiring/pin assignments.
 
 - [Arduino IDE](https://www.arduino.cc/en/software) 2.x (or `arduino-cli`)
 - **ESP32 board support**: install via Boards Manager → search "esp32" → install the Espressif "esp32" package (this project uses the Arduino-ESP32 core v3.x, which provides `ESP_I2S.h`)
-- **Board selection**: pick your specific ESP32 dev board model under Tools → Board
+- **Board selection**: pick "ESP32C3 Dev Module" (FQBN `esp32:esp32:esp32c3`) under Tools → Board — matches the SuperMini's chip
 - **Libraries** (install via Library Manager):
   - `Adafruit SSD1306`
   - `Adafruit GFX Library`
