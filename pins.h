@@ -1,25 +1,31 @@
 #pragma once
 
-// I2S DAC (PCM5102 breakout)
-#define PIN_I2S_BCK  26
-#define PIN_I2S_LRCK 25
-#define PIN_I2S_DOUT 27
+// Pin map for ESP32-C3 (QFN32, GPIO0-10/18-21 broken out, GPIO11-17 reserved
+// for internal flash). All assignments below stay within GPIO0-10 to avoid
+// the C3's dedicated USB-Serial/JTAG pins (GPIO18/19).
 
-// OLED (SSD1306 128x64, I2C) — uses default Wire pins on ESP32
-#define PIN_OLED_SDA 21
-#define PIN_OLED_SCL 22
+// I2S DAC (PCM5102 breakout)
+#define PIN_I2S_BCK  6
+#define PIN_I2S_LRCK 7
+#define PIN_I2S_DOUT 10
+
+// OLED (SSD1306 128x64, I2C) — default Wire pins on ESP32-C3
+#define PIN_OLED_SDA 8
+#define PIN_OLED_SCL 9
 #define OLED_WIDTH   128
 #define OLED_HEIGHT  64
 #define OLED_I2C_ADDR 0x3C
 const int OLED_ROW_HEIGHT_PX = 16; // per-oscillator row spacing, below the title row at y=0
 
-// Potentiometers: 3 volume + 3 pitch, all ADC1-only pins
-#define PIN_POT_VOL1 32
-#define PIN_POT_VOL2 33
-#define PIN_POT_VOL3 34
-#define PIN_POT_PITCH1 35
-#define PIN_POT_PITCH2 36 // silkscreen VP
-#define PIN_POT_PITCH3 39 // silkscreen VN
+// Potentiometers: 3 volume + 3 pitch. The C3 only has 6 ADC-capable pins
+// total (ADC1: GPIO0-4, ADC2: GPIO5), so all 6 are used here; ADC2 is safe
+// only because this project never enables WiFi.
+#define PIN_POT_VOL1 0
+#define PIN_POT_VOL2 1
+#define PIN_POT_VOL3 2  // strapping pin; a pot wiper doesn't affect boot mode
+#define PIN_POT_PITCH1 3
+#define PIN_POT_PITCH2 4
+#define PIN_POT_PITCH3 5 // ADC2 channel 0 — the C3's only ADC2 pin
 
 // Audio constants
 #define NUM_OSCILLATORS   3
