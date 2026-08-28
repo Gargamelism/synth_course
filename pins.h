@@ -31,7 +31,7 @@
 #define OLED_VISIBLE_WIDTH  72
 #define OLED_VISIBLE_HEIGHT 40
 #define OLED_X_OFFSET 30
-#define OLED_Y_OFFSET 12
+#define OLED_Y_OFFSET 24
 
 // Compact status layout inside the visible window (see display.cpp).
 const int OLED_OSC_ROW_TOP_PX     = 12; // first oscillator row's y, from the window top
