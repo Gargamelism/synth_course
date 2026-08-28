@@ -23,6 +23,7 @@ const double PHASE_ACCUMULATOR_RANGE = 4294967296.0;
 extern int16_t g_sineTable[SINE_TABLE_SIZE];
 void initSineTable();
 
-// Sums `count` oscillator samples scaled by their volumes (0.0-1.0) into one
-// clipped int16_t output sample.
-int16_t mixOscillators(const int16_t *samples, const float *volumes, int count);
+// Sums `count` oscillator samples, each scaled by its Q15 volume
+// (0 .. VOLUME_Q15_ONE), into one clipped int16_t output sample. Integer-only
+// so it stays cheap in the per-sample audio loop on the FPU-less C3.
+int16_t mixOscillators(const int16_t *samples, const int16_t *volumesQ15, int count);

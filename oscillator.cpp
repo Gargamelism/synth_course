@@ -26,10 +26,12 @@ int16_t Oscillator::nextSample() {
   return g_sineTable[index];
 }
 
-int16_t mixOscillators(const int16_t *samples, const float *volumes, int count) {
+int16_t mixOscillators(const int16_t *samples, const int16_t *volumesQ15, int count) {
   int32_t mixed = 0;
   for (int i = 0; i < count; i++) {
-    mixed += (int32_t)(samples[i] * volumes[i]);
+    // samples[i] is <= SINE_TABLE_AMPLITUDE, volumesQ15[i] <= 32767, so the
+    // product fits int32_t with room to spare before the >> 15 rescale.
+    mixed += ((int32_t)samples[i] * volumesQ15[i]) >> VOLUME_Q15_SHIFT;
   }
   if (mixed > INT16_MAX) mixed = INT16_MAX;
   if (mixed < INT16_MIN) mixed = INT16_MIN;

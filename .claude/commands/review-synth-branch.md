@@ -30,6 +30,7 @@ Flag anything in the Core-0 audio task or per-sample oscillator code that could 
 - Naming matches project convention: `g_` for cross-file globals, `s_` for file-local statics, camelCase functions.
 - Header guards / `#pragma once` present on new headers; no missing includes relying on transitive includes.
 - Integer overflow, signed/unsigned mismatches, and array bounds on any new indexing logic.
+- Comments earn their place: flag ones that just restate the code (`i++; // increment i`), duplicate a header/`pins.h` comment already at the definition, or over-explain. Comments should say *why*, not narrate *what*. A wrong or stale comment is worse than none.
 
 ## 5. Test coverage for hardware-independent code
 This project's host-side tests live in `test/` (see `test/README.md`) and run with `test/run.sh` — no ESP32 toolchain needed, so there's no excuse for hardware-independent logic to go untested. "Hardware-independent" means it doesn't touch `Arduino.h` APIs (`analogRead`, `digitalWrite`, `Serial`, `Wire`, etc.), FreeRTOS primitives, or any peripheral (I2S/I2C/ADC) — pure math/logic like `oscillator.cpp` and `controls_math.cpp`.

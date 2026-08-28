@@ -30,23 +30,24 @@ static void runTests() {
   // mixOscillators: positive/negative clipping at the int16_t range.
   {
     int16_t samples[3] = {30000, 30000, 30000};
-    float volumes[3] = {1.0f, 1.0f, 1.0f};
+    int16_t volumes[3] = {VOLUME_Q15_ONE, VOLUME_Q15_ONE, VOLUME_Q15_ONE};
     CHECK(mixOscillators(samples, volumes, 3) == INT16_MAX);
   }
   {
     int16_t samples[3] = {-30000, -30000, -30000};
-    float volumes[3] = {1.0f, 1.0f, 1.0f};
+    int16_t volumes[3] = {VOLUME_Q15_ONE, VOLUME_Q15_ONE, VOLUME_Q15_ONE};
     CHECK(mixOscillators(samples, volumes, 3) == INT16_MIN);
   }
   // mixOscillators: normal (non-clipping) sum, including a muted voice.
+  // Q15 volumes: 16384 == 0.5, 8192 == 0.25, 0 == muted.
   {
     int16_t samples[3] = {1000, -1000, 500};
-    float volumes[3] = {0.5f, 0.5f, 0.0f};
+    int16_t volumes[3] = {16384, 16384, 0};
     CHECK(mixOscillators(samples, volumes, 3) == 0);
   }
   {
     int16_t samples[1] = {1000};
-    float volumes[1] = {0.25f};
+    int16_t volumes[1] = {8192};
     CHECK(mixOscillators(samples, volumes, 1) == 250);
   }
 }

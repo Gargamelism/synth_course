@@ -7,15 +7,12 @@
 static I2SClass s_i2s;
 static Oscillator s_osc[NUM_OSCILLATORS];
 
-// One block of stereo frames generated and written per iteration.
-#define AUDIO_BLOCK_FRAMES 256
-
 static void audioTask(void *arg) {
   (void)arg;
 
   int16_t buffer[AUDIO_BLOCK_FRAMES * 2]; // interleaved L/R
   float freq[NUM_OSCILLATORS];
-  float vol[NUM_OSCILLATORS] = {0};
+  int16_t volQ15[NUM_OSCILLATORS] = {0};
 
   for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
     freq[oscIndex] = FREQ_MIN_HZ;
@@ -28,7 +25,10 @@ static void audioTask(void *arg) {
     if (xSemaphoreTake(g_paramsMutex, 0) == pdTRUE) {
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
         freq[oscIndex] = g_oscParams.freqHz[oscIndex];
-        vol[oscIndex] = g_oscParams.volume[oscIndex];
+        // Convert 0.0-1.0 volume to Q15 once per block (not per sample) so
+        // the only float math left is off the per-sample hot path.
+        volQ15[oscIndex] =
+            (int16_t)(g_oscParams.volume[oscIndex] * VOLUME_Q15_ONE + 0.5f);
       }
       xSemaphoreGive(g_paramsMutex);
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
@@ -41,13 +41,19 @@ static void audioTask(void *arg) {
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
         samples[oscIndex] = s_osc[oscIndex].nextSample();
       }
-      int16_t mixed = mixOscillators(samples, vol, NUM_OSCILLATORS);
+      int16_t mixed = mixOscillators(samples, volQ15, NUM_OSCILLATORS);
       buffer[frameIndex * 2 + 0] = mixed; // L
       buffer[frameIndex * 2 + 1] = mixed; // R
     }
 
-    // Blocking write paces the loop to real time; no delay() needed.
-    s_i2s.write((uint8_t *)buffer, sizeof(buffer));
+    // Blocking write paces the loop to real time; no delay() needed. If the
+    // write comes up short (I2S not started, or a driver error) this
+    // max-priority task would otherwise spin Core 0 — the C3's only core —
+    // and freeze loop(), the display, and the liveness LED. Yield instead.
+    size_t written = s_i2s.write((uint8_t *)buffer, sizeof(buffer));
+    if (written < sizeof(buffer)) {
+      vTaskDelay(1);
+    }
   }
 }
 
