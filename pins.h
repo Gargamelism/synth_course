@@ -1,36 +1,57 @@
 #pragma once
 
-// Pin map for the ESP32-C3 SuperMini board (QFN32, GPIO0-10/18-21 broken
-// out, GPIO11-17 reserved for internal flash). GPIO8 is the onboard LED and
-// GPIO9 is the BOOT button on this board — both left free of other duties.
-// The rest stays within GPIO0-10 to avoid the C3's dedicated
-// USB-Serial/JTAG pins (GPIO18/19).
+// Pin map for the ABRobot ESP32-C3 0.42" OLED dev board (ESP32-C3, QFN32).
+// This is NOT a bare SuperMini: it has a built-in SSD1306 OLED hardwired to
+// GPIO5 (SDA) / GPIO6 (SCL), GPIO18/19 soldered straight to the USB socket,
+// and GPIO20/21 wired as UART0. GPIO8 is the onboard LED, GPIO9 the BOOT
+// button, GPIO11-17 the internal flash. That leaves GPIO0-4, 7, 10 general-
+// purpose — plus GPIO20/21 once "USB CDC On Boot" is enabled in the Arduino
+// IDE (which this project requires: it routes the serial console over native
+// USB and frees GPIO20/21 for other use).
 
-// I2S DAC (PCM5102 breakout)
-#define PIN_I2S_BCK  6
+// I2S DAC (PCM5102 breakout). BCK sits on GPIO20 — a UART0 pin, free here
+// only because USB CDC On Boot moves the console to native USB. Its usual
+// home, GPIO6, is the OLED's SCL on this board.
+#define PIN_I2S_BCK  20
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10
 
-// OLED (SSD1306 128x64, I2C) — moved off the board's default 8/9 since
-// those are the onboard LED and BOOT button here, not general-purpose.
-#define PIN_OLED_SDA 20
-#define PIN_OLED_SCL 21
-#define OLED_WIDTH   128
-#define OLED_HEIGHT  64
+// OLED — the board's built-in SSD1306, I2C, on fixed pins (not movable).
+#define PIN_OLED_SDA 5
+#define PIN_OLED_SCL 6
 #define OLED_I2C_ADDR 0x3C
-const int OLED_ROW_HEIGHT_PX = 16; // per-oscillator row spacing, below the title row at y=0
 
-// Potentiometers: 3 volume + 3 pitch. The C3 only has 6 ADC-capable pins
-// total (ADC1: GPIO0-4, ADC2: GPIO5), so all 6 are used here; ADC2 is safe
-// only because this project never enables WiFi.
+// The SSD1306 controller has a 128x64 GDDRAM buffer, but this board's 0.42"
+// glass only shows a 72x40 window into it, offset to (30,12). Adafruit_SSD1306
+// has no offset support, so display.cpp shifts every draw by (OLED_X_OFFSET,
+// OLED_Y_OFFSET) by hand. A few panels of this type centre at (28,24)
+// instead — nudge OLED_X_OFFSET / OLED_Y_OFFSET if the image is clipped.
+#define OLED_WIDTH   128  // full SSD1306 buffer, not the visible area
+#define OLED_HEIGHT  64
+#define OLED_VISIBLE_WIDTH  72
+#define OLED_VISIBLE_HEIGHT 40
+#define OLED_X_OFFSET 30
+#define OLED_Y_OFFSET 12
+
+// Compact status layout inside the visible window (see display.cpp).
+const int OLED_OSC_ROW_TOP_PX     = 12; // first oscillator row's y, from the window top
+const int OLED_OSC_ROW_SPACING_PX = 9;
+const int OLED_TEXT_HEIGHT_PX     = 8;  // Adafruit GFX size-1 glyph height
+const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the window's left
+
+// Potentiometers: 3 volume + 2 pitch. The C3 has only 6 ADC-capable pins
+// (ADC1: GPIO0-4, ADC2: GPIO5), and GPIO5 is the OLED's SDA on this board,
+// leaving 5 for pots. Oscillator 3 therefore has no pitch pot and runs at
+// OSC3_FIXED_FREQ_HZ; its volume pot still works.
 #define PIN_POT_VOL1 0
 #define PIN_POT_VOL2 1
 #define PIN_POT_VOL3 2  // strapping pin; a pot wiper doesn't affect boot mode
 #define PIN_POT_PITCH1 3
 #define PIN_POT_PITCH2 4
-#define PIN_POT_PITCH3 5 // ADC2 channel 0 — the C3's only ADC2 pin
+#define NUM_PITCH_POTS 2
+#define OSC3_FIXED_FREQ_HZ 220.0f // A3 — osc 3's pitch, since it has no pot
 
-// Liveness LED — the SuperMini's onboard LED. Active-low: LOW turns it on.
+// Liveness LED — the board's onboard LED. Active-low: LOW turns it on.
 #define PIN_STATUS_LED 8
 
 // Audio constants

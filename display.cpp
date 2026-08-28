@@ -6,6 +6,8 @@
 #include "controls.h"
 #include "notes.h"
 
+// The SSD1306 buffer is 128x64; this board only shows a 72x40 window at
+// (OLED_X_OFFSET, OLED_Y_OFFSET), so every draw below is shifted by that.
 static Adafruit_SSD1306 s_display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 static const char *k_Title = "3-OSC SYNTH";
 
@@ -30,20 +32,38 @@ static bool anyOscillatorActive(const float vol[NUM_OSCILLATORS]) {
   return false;
 }
 
+static void drawTitle() {
+  s_display.setCursor(OLED_X_OFFSET, OLED_Y_OFFSET);
+  s_display.print(k_Title);
+}
+
 static void drawOscillatorRows(const float freq[NUM_OSCILLATORS], const float vol[NUM_OSCILLATORS]) {
   char noteBuf[NOTE_NAME_BUF_SIZE];
+  const int barX = OLED_X_OFFSET + OLED_VOL_BAR_X_PX;
+  const int barW = OLED_VISIBLE_WIDTH - OLED_VOL_BAR_X_PX;
   for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
+    int rowY = OLED_Y_OFFSET + OLED_OSC_ROW_TOP_PX + oscIndex * OLED_OSC_ROW_SPACING_PX;
     freqToNoteName(freq[oscIndex], noteBuf);
-    s_display.setCursor(0, OLED_ROW_HEIGHT_PX + oscIndex * OLED_ROW_HEIGHT_PX);
-    s_display.printf("O%d %4dHz %-3s V:%3d%%",
-                      oscIndex + 1, (int)freq[oscIndex], noteBuf, (int)(vol[oscIndex] * 100.0f));
+
+    // "1 A3" normally; "3*A3" — the '*' marks an oscillator with no pitch pot.
+    char marker = (oscIndex < NUM_PITCH_POTS) ? ' ' : '*';
+    s_display.setCursor(OLED_X_OFFSET, rowY);
+    s_display.printf("%d%c%-3s", oscIndex + 1, marker, noteBuf);
+
+    // Volume as a proportional bar filling the rest of the row.
+    s_display.drawRect(barX, rowY, barW, OLED_TEXT_HEIGHT_PX, SSD1306_WHITE);
+    int fillW = (int)(vol[oscIndex] * (barW - 2) + 0.5f);
+    if (fillW > 0) {
+      s_display.fillRect(barX + 1, rowY + 1, fillW, OLED_TEXT_HEIGHT_PX - 2, SSD1306_WHITE);
+    }
   }
 }
 
 static void drawFlatline() {
-  // EKG-style flatline across the oscillator rows' vertical center.
-  int lineY = OLED_ROW_HEIGHT_PX + (NUM_OSCILLATORS * OLED_ROW_HEIGHT_PX) / 2;
-  s_display.drawLine(0, lineY, OLED_WIDTH - 1, lineY, SSD1306_WHITE);
+  // EKG-style flatline across the visible window's vertical center.
+  int lineY = OLED_Y_OFFSET + OLED_VISIBLE_HEIGHT / 2;
+  s_display.drawLine(OLED_X_OFFSET, lineY,
+                     OLED_X_OFFSET + OLED_VISIBLE_WIDTH - 1, lineY, SSD1306_WHITE);
 }
 
 bool displayBegin() {
@@ -54,8 +74,7 @@ bool displayBegin() {
   s_display.clearDisplay();
   s_display.setTextColor(SSD1306_WHITE);
   s_display.setTextSize(1);
-  s_display.setCursor(0, 0);
-  s_display.println(k_Title);
+  drawTitle();
   s_display.display();
   return true;
 }
@@ -68,8 +87,7 @@ void displayUpdate() {
   }
 
   s_display.clearDisplay();
-  s_display.setCursor(0, 0);
-  s_display.println(k_Title);
+  drawTitle();
 
   if (anyOscillatorActive(vol)) {
     drawOscillatorRows(freq, vol);

@@ -2,6 +2,8 @@
 
 // ---- pins.h mirror -------------------------------------------------------
 const NUM_OSCILLATORS   = 3;
+const NUM_PITCH_POTS    = 2;      // osc 3 has no pitch pot on this board
+const OSC3_FIXED_FREQ_HZ = 220.0; // A3 — osc 3's fixed pitch
 const SAMPLE_RATE_HZ    = 44100;
 const SINE_TABLE_SIZE   = 256;
 const SINE_TABLE_AMPLITUDE = 9000;
@@ -12,9 +14,17 @@ const ADC_MAX_COUNT = (1 << ADC_RESOLUTION_BITS) - 1; // 4095
 const ADC_EMA_ALPHA = 0.15;
 const ADC_HYSTERESIS_COUNTS = 4;
 const DISPLAY_REFRESH_MS = 100;
-const OLED_WIDTH  = 128;
+const OLED_WIDTH  = 128;  // full SSD1306 buffer (unused here; see visible window below)
 const OLED_HEIGHT = 64;
-const OLED_ROW_HEIGHT_PX = 16;
+// This board's glass only shows a 72x40 window into the buffer. The firmware
+// draws into the 128x64 buffer at offset (30,12); the sim canvas *is* the
+// visible window, so it draws in window-local coords with no offset.
+const OLED_VISIBLE_WIDTH  = 72;
+const OLED_VISIBLE_HEIGHT = 40;
+const OLED_OSC_ROW_TOP_PX = 12;
+const OLED_OSC_ROW_SPACING_PX = 9;
+const OLED_TEXT_HEIGHT_PX = 8;
+const OLED_VOL_BAR_X_PX = 32;
 const PHASE_ACCUMULATOR_RANGE = 4294967296.0; // 2^32, oscillator.h
 
 // ---- notes.h port ---------------------------------------------------------
@@ -149,15 +159,17 @@ const volState = [];
 const pitchState = [];
 const freqHz = new Array(NUM_OSCILLATORS).fill(FREQ_MIN_HZ);
 const volume = new Array(NUM_OSCILLATORS).fill(0);
+for (let i = NUM_PITCH_POTS; i < NUM_OSCILLATORS; i++) freqHz[i] = OSC3_FIXED_FREQ_HZ;
 
 for (let i = 0; i < NUM_OSCILLATORS; i++) {
+  const hasPitchPot = i < NUM_PITCH_POTS;
   const osc = document.createElement("div");
   osc.className = "osc";
   osc.innerHTML = `
     <h2>OSC ${i + 1}</h2>
     <div class="ctrl">
-      <label>Pitch</label>
-      <input type="range" min="0" max="${ADC_MAX_COUNT}" value="0" id="pitch${i}">
+      <label>Pitch${hasPitchPot ? "" : " (fixed)"}</label>
+      <input type="range" min="0" max="${ADC_MAX_COUNT}" value="0" id="pitch${i}" ${hasPitchPot ? "" : "disabled"}>
       <div class="readout" id="pitchOut${i}"></div>
     </div>
     <div class="ctrl">
@@ -186,17 +198,18 @@ for (let i = 0; i < NUM_OSCILLATORS; i++) {
 function controlsUpdate() {
   for (let i = 0; i < NUM_OSCILLATORS; i++) {
     const volRaw = parseInt(volSliders[i].value, 10) + adcNoise();
-    const pitchRaw = parseInt(pitchSliders[i].value, 10) + adcNoise();
-
     const volFiltered = smoothValue(volRaw, volState[i], ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-    const pitchFiltered = smoothValue(pitchRaw, pitchState[i], ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-
     volume[i] = clamp01(volFiltered / ADC_MAX_COUNT);
-
-    const pitchNorm = clamp01(pitchFiltered / ADC_MAX_COUNT);
-    freqHz[i] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
-
     volReadouts[i].textContent = `${Math.round(volume[i] * 100)}%`;
+
+    if (i < NUM_PITCH_POTS) {
+      const pitchRaw = parseInt(pitchSliders[i].value, 10) + adcNoise();
+      const pitchFiltered = smoothValue(pitchRaw, pitchState[i], ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
+      const pitchNorm = clamp01(pitchFiltered / ADC_MAX_COUNT);
+      freqHz[i] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
+    } else {
+      freqHz[i] = OSC3_FIXED_FREQ_HZ; // no pot — GPIO5 is the OLED's SDA here
+    }
     pitchReadouts[i].textContent = `${Math.round(freqHz[i])}Hz`;
   }
 
@@ -212,19 +225,35 @@ const ctx = canvas.getContext("2d");
 
 function drawDisplay() {
   ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, OLED_WIDTH, OLED_HEIGHT);
+  ctx.fillRect(0, 0, OLED_VISIBLE_WIDTH, OLED_VISIBLE_HEIGHT);
   ctx.fillStyle = "#f5f5f5";
+  ctx.strokeStyle = "#f5f5f5";
+  ctx.lineWidth = 1;
   ctx.font = "8px monospace";
   ctx.textBaseline = "top";
   ctx.fillText("3-OSC SYNTH", 0, 0);
 
+  // Silent — all volumes at 0 — shows an EKG-style flatline (displayUpdate()).
+  if (!volume.some((v) => v > 0)) {
+    const y = Math.round(OLED_VISIBLE_HEIGHT / 2) + 0.5;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(OLED_VISIBLE_WIDTH, y);
+    ctx.stroke();
+    return;
+  }
+
+  const barX = OLED_VOL_BAR_X_PX;
+  const barW = OLED_VISIBLE_WIDTH - OLED_VOL_BAR_X_PX;
   for (let i = 0; i < NUM_OSCILLATORS; i++) {
-    const note = freqToNoteName(freqHz[i]);
-    const freqStr = String(Math.trunc(freqHz[i])).padStart(4, " ");
-    const noteStr = note.padEnd(3, " ");
-    const volStr = String(Math.trunc(volume[i] * 100)).padStart(3, " ");
-    const line = `O${i + 1} ${freqStr}Hz ${noteStr} V:${volStr}%`;
-    ctx.fillText(line, 0, OLED_ROW_HEIGHT_PX * (i + 1));
+    const rowY = OLED_OSC_ROW_TOP_PX + i * OLED_OSC_ROW_SPACING_PX;
+    const marker = i < NUM_PITCH_POTS ? " " : "*"; // '*' = no pitch pot
+    ctx.fillStyle = "#f5f5f5";
+    ctx.fillText(`${i + 1}${marker}${freqToNoteName(freqHz[i])}`, 0, rowY);
+
+    ctx.strokeRect(barX + 0.5, rowY + 0.5, barW - 1, OLED_TEXT_HEIGHT_PX - 1);
+    const fillW = Math.round(volume[i] * (barW - 2));
+    if (fillW > 0) ctx.fillRect(barX + 1, rowY + 1, fillW, OLED_TEXT_HEIGHT_PX - 2);
   }
 }
 setInterval(drawDisplay, DISPLAY_REFRESH_MS);

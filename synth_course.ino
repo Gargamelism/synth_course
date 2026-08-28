@@ -1,7 +1,8 @@
-// 3-oscillator sine synth: 3 volumes + 3 pitches via potentiometers,
-// audio out over I2S to an external DAC, live status on a 0.96" OLED.
+// 3-oscillator sine synth: 3 volumes + 2 pitches via potentiometers (osc 3
+// runs at a fixed pitch — no ADC pin left), audio out over I2S to an
+// external DAC, live status on the board's built-in 0.42" OLED.
 // See pins.h for wiring, oscillator/audio_task for the DSP + Core-0 audio
-// path, controls for the Core-1 pot reading, display for the OLED.
+// path, controls for the loop() pot reading, display for the OLED.
 
 #include "pins.h"
 #include "oscillator.h"
@@ -11,6 +12,11 @@
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
+  // This board needs "USB CDC On Boot" enabled (Arduino IDE -> Tools): it
+  // routes the console over native USB and frees GPIO20/21 for I2S. The USB
+  // port takes a moment to enumerate after reset — wait a beat so the
+  // diagnostics below actually reach the Serial Monitor.
+  delay(200);
 
   initSineTable();
   controlsBegin();

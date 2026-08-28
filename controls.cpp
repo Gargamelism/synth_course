@@ -6,16 +6,18 @@ OscParams g_oscParams;
 SemaphoreHandle_t g_paramsMutex;
 
 static const int k_VolPins[] = {PIN_POT_VOL1, PIN_POT_VOL2, PIN_POT_VOL3};
-static const int k_PitchPins[] = {PIN_POT_PITCH1, PIN_POT_PITCH2, PIN_POT_PITCH3};
+static const int k_PitchPins[] = {PIN_POT_PITCH1, PIN_POT_PITCH2};
 static_assert(sizeof(k_VolPins) / sizeof(k_VolPins[0]) == NUM_OSCILLATORS,
               "k_VolPins entries must match NUM_OSCILLATORS — add/remove PIN_POT_VOLn in pins.h");
-static_assert(sizeof(k_PitchPins) / sizeof(k_PitchPins[0]) == NUM_OSCILLATORS,
-              "k_PitchPins entries must match NUM_OSCILLATORS — add/remove PIN_POT_PITCHn in pins.h");
+static_assert(sizeof(k_PitchPins) / sizeof(k_PitchPins[0]) == NUM_PITCH_POTS,
+              "k_PitchPins entries must match NUM_PITCH_POTS — add/remove PIN_POT_PITCHn in pins.h");
+static_assert(NUM_PITCH_POTS <= NUM_OSCILLATORS,
+              "can't have more pitch pots than oscillators");
 
 static float s_volFiltered[NUM_OSCILLATORS];
-static float s_pitchFiltered[NUM_OSCILLATORS];
+static float s_pitchFiltered[NUM_PITCH_POTS];
 static int s_volLastRaw[NUM_OSCILLATORS];
-static int s_pitchLastRaw[NUM_OSCILLATORS];
+static int s_pitchLastRaw[NUM_PITCH_POTS];
 
 static int readOversampled(int pin) {
   long sum = 0;
@@ -29,20 +31,23 @@ void controlsBegin() {
   analogReadResolution(ADC_RESOLUTION_BITS);
   for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
     analogSetPinAttenuation(k_VolPins[oscIndex], ADC_11db);
-    analogSetPinAttenuation(k_PitchPins[oscIndex], ADC_11db);
     int volRaw = analogRead(k_VolPins[oscIndex]);
-    int pitchRaw = analogRead(k_PitchPins[oscIndex]);
     s_volFiltered[oscIndex] = volRaw;
-    s_pitchFiltered[oscIndex] = pitchRaw;
     s_volLastRaw[oscIndex] = volRaw;
-    s_pitchLastRaw[oscIndex] = pitchRaw;
+  }
+  for (int potIndex = 0; potIndex < NUM_PITCH_POTS; potIndex++) {
+    analogSetPinAttenuation(k_PitchPins[potIndex], ADC_11db);
+    int pitchRaw = analogRead(k_PitchPins[potIndex]);
+    s_pitchFiltered[potIndex] = pitchRaw;
+    s_pitchLastRaw[potIndex] = pitchRaw;
   }
 
   g_paramsMutex = xSemaphoreCreateMutex();
 
   xSemaphoreTake(g_paramsMutex, portMAX_DELAY);
   for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    g_oscParams.freqHz[oscIndex] = FREQ_MIN_HZ;
+    g_oscParams.freqHz[oscIndex] =
+        (oscIndex < NUM_PITCH_POTS) ? FREQ_MIN_HZ : OSC3_FIXED_FREQ_HZ;
     g_oscParams.volume[oscIndex] = 0.0f;
   }
   xSemaphoreGive(g_paramsMutex);
@@ -54,17 +59,23 @@ void controlsUpdate() {
 
   for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
     int volRaw = readOversampled(k_VolPins[oscIndex]);
-    int pitchRaw = readOversampled(k_PitchPins[oscIndex]);
-
     float volFiltered = smoothValue(volRaw, &s_volFiltered[oscIndex], &s_volLastRaw[oscIndex],
                                      ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-    float pitchFiltered = smoothValue(pitchRaw, &s_pitchFiltered[oscIndex], &s_pitchLastRaw[oscIndex],
-                                       ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-
     vol[oscIndex] = constrain(volFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
+  }
 
+  for (int potIndex = 0; potIndex < NUM_PITCH_POTS; potIndex++) {
+    int pitchRaw = readOversampled(k_PitchPins[potIndex]);
+    float pitchFiltered = smoothValue(pitchRaw, &s_pitchFiltered[potIndex], &s_pitchLastRaw[potIndex],
+                                       ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
     float pitchNorm = constrain(pitchFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
-    freq[oscIndex] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
+    freq[potIndex] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
+  }
+  // Oscillators past the last pitch pot (osc 3 on this board) have no knob
+  // and hold a fixed frequency — GPIO5, the C3's last free ADC pin, is the
+  // OLED's SDA line here.
+  for (int oscIndex = NUM_PITCH_POTS; oscIndex < NUM_OSCILLATORS; oscIndex++) {
+    freq[oscIndex] = OSC3_FIXED_FREQ_HZ;
   }
 
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) == pdTRUE) {

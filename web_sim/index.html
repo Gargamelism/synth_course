@@ -19,9 +19,12 @@
                      - notes.h             -> freqToNoteName(), used for the
                                               OLED note names.
                      - display.cpp         -> drawDisplay(), reproduces
-                                              displayUpdate()'s exact text
-                                              layout on a 128x64 canvas standing
-                                              in for the SSD1306.
+                                              displayUpdate()'s layout on a
+                                              72x40 canvas standing in for this
+                                              board's visible OLED window (the
+                                              firmware's (30,12) buffer offset
+                                              isn't needed here — the canvas is
+                                              the visible area).
                      - pins.h               -> the CONST block. Manually
                                               mirrored, not auto-synced: if you
                                               change pins.h, update here.
@@ -46,7 +49,7 @@
 <h1>3-OSC SYNTH — browser simulator</h1>
 <div class="sub">Ports oscillator.cpp / controls_math.cpp / notes.h / display.cpp math directly to JS.</div>
 
-<div id="oledWrap"><canvas id="oled" width="128" height="64"></canvas></div>
+<div id="oledWrap"><canvas id="oled" width="72" height="40"></canvas></div>
 
 <button id="power">Start Audio</button>
 <div class="sub" id="status">All 3 oscillators boot at Volume 0, same as the real firmware — raise a Volume fader below to hear a tone.</div>

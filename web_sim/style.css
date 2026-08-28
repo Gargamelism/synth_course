@@ -40,8 +40,8 @@ h1 {
 #oled {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  width: 384px;
-  height: 192px;
+  width: 360px;  /* 72x40 visible window, scaled 5x */
+  height: 200px;
   display: block;
 }
 #power {
