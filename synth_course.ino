@@ -19,6 +19,7 @@ void setup() {
   delay(200);
 
   initSineTable();
+  initHarmonicWeights();
   controlsBegin();
   pinMode(PIN_STATUS_LED, OUTPUT);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // Pin map for the ABRobot ESP32-C3 0.42" OLED dev board (ESP32-C3, QFN32).
 // This is NOT a bare SuperMini: it has a built-in SSD1306 OLED hardwired to
 // GPIO5 (SDA) / GPIO6 (SCL), GPIO18/19 soldered straight to the USB socket,
@@ -54,6 +56,8 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 #define SINE_TABLE_AMPLITUDE 9000 // keeps 3-osc full-volume sum inside int16_t range
 #define AUDIO_BLOCK_FRAMES 256    // stereo frames generated + written per I2S block
 
+#define NUM_HARMONICS 6  // fundamental (1x) + 5 natural overtones (2x..6x)
+
 // Per-voice volume is carried into the mixer as a Q15 fixed-point fraction
 // (0 .. VOLUME_Q15_ONE == 0.0 .. 1.0) so the per-sample mix stays integer-only
 // — the ESP32-C3 core has no hardware FPU, so a per-sample float multiply is a
@@ -64,6 +68,13 @@ const int VOLUME_Q15_ONE   = (1 << VOLUME_Q15_SHIFT) - 1; // 32767
 // Pitch mapping range (Hz), exponential across the pot sweep
 #define FREQ_MIN_HZ 80.0f
 #define FREQ_MAX_HZ 1000.0f
+
+// Guards against a future FREQ_MAX_HZ/NUM_HARMONICS change silently letting
+// the highest harmonic exceed Nyquist (SAMPLE_RATE_HZ / 2), which would
+// alias instead of sounding like a natural overtone.
+static_assert(FREQ_MAX_HZ * NUM_HARMONICS < SAMPLE_RATE_HZ / 2.0f,
+              "Highest harmonic exceeds Nyquist frequency - aliasing will occur. "
+              "Reduce NUM_HARMONICS or FREQ_MAX_HZ.");
 
 // ADC resolution — 12 is the ESP32 hardware ADC's native/max bit depth
 const int ADC_RESOLUTION_BITS = 12;
