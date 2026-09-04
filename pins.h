@@ -39,23 +39,16 @@ const int OLED_OSC_ROW_SPACING_PX = 9;
 const int OLED_TEXT_HEIGHT_PX     = 8;  // Adafruit GFX size-1 glyph height
 const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the window's left
 
-// Potentiometers: 3 volume + 2 pitch. The C3 has only 6 ADC-capable pins
-// (ADC1: GPIO0-4, ADC2: GPIO5), and GPIO5 is the OLED's SDA on this board,
-// leaving 5 for pots. Oscillator 3 therefore has no pitch pot and runs at
-// OSC3_FIXED_FREQ_HZ; its volume pot still works.
+// Single sine voice: one volume pot + one pitch pot.
 #define PIN_POT_VOL1 0
-#define PIN_POT_VOL2 1
-#define PIN_POT_VOL3 2  // strapping pin; a pot wiper doesn't affect boot mode
 #define PIN_POT_PITCH1 3
-#define PIN_POT_PITCH2 4
-#define NUM_PITCH_POTS 2
-#define OSC3_FIXED_FREQ_HZ 220.0f // A3 — osc 3's pitch, since it has no pot
+#define NUM_PITCH_POTS 1
 
 // Liveness LED — the board's onboard LED. Active-low: LOW turns it on.
 #define PIN_STATUS_LED 8
 
 // Audio constants
-#define NUM_OSCILLATORS   3
+#define NUM_OSCILLATORS   1
 #define SAMPLE_RATE_HZ    44100
 #define SINE_TABLE_SIZE   256
 #define SINE_TABLE_AMPLITUDE 9000 // keeps 3-osc full-volume sum inside int16_t range

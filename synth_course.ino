@@ -1,6 +1,6 @@
-// 3-oscillator sine synth: 3 volumes + 2 pitches via potentiometers (osc 3
-// runs at a fixed pitch — no ADC pin left), audio out over I2S to an
-// external DAC, live status on the board's built-in 0.42" OLED.
+// Single-oscillator sine synth: one volume + one pitch potentiometer,
+// audio out over I2S to an external DAC, live status on the board's
+// built-in 0.42" OLED.
 // See pins.h for wiring, oscillator/audio_task for the DSP + Core-0 audio
 // path, controls for the loop() pot reading, display for the OLED.
 

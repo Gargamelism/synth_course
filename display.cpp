@@ -9,7 +9,7 @@
 // The SSD1306 buffer is 128x64; this board only shows a 72x40 window at
 // (OLED_X_OFFSET, OLED_Y_OFFSET), so every draw below is shifted by that.
 static Adafruit_SSD1306 s_display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
-static const char *k_Title = "3-OSC SYNTH";
+static const char *k_Title = "SINE SYNTH";
 
 static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) != pdTRUE) {
@@ -45,10 +45,8 @@ static void drawOscillatorRows(const float freq[NUM_OSCILLATORS], const float vo
     int rowY = OLED_Y_OFFSET + OLED_OSC_ROW_TOP_PX + oscIndex * OLED_OSC_ROW_SPACING_PX;
     freqToNoteName(freq[oscIndex], noteBuf);
 
-    // "1 A3" normally; "3*A3" — the '*' marks an oscillator with no pitch pot.
-    char marker = (oscIndex < NUM_PITCH_POTS) ? ' ' : '*';
     s_display.setCursor(OLED_X_OFFSET, rowY);
-    s_display.printf("%d%c%-3s", oscIndex + 1, marker, noteBuf);
+    s_display.printf("%-3s", noteBuf);
 
     // Volume as a proportional bar filling the rest of the row.
     s_display.drawRect(barX, rowY, barW, OLED_TEXT_HEIGHT_PX, SSD1306_WHITE);
