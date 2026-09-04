@@ -9,7 +9,7 @@
 // The SSD1306 buffer is 128x64; this board only shows a 72x40 window at
 // (OLED_X_OFFSET, OLED_Y_OFFSET), so every draw below is shifted by that.
 static Adafruit_SSD1306 s_display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
-static const char *k_Title = "SINE SYNTH";
+static const char *k_Title = "SINE SYNTH D B";
 
 static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) != pdTRUE) {

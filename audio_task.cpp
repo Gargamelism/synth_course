@@ -3,6 +3,7 @@
 #include "pins.h"
 #include "oscillator.h"
 #include "controls.h"
+#include "distortion.h"
 
 static I2SClass s_i2s;
 static Oscillator s_osc[NUM_OSCILLATORS];
@@ -41,7 +42,7 @@ static void audioTask(void *arg) {
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
         samples[oscIndex] = s_osc[oscIndex].nextSample();
       }
-      int16_t mixed = mixOscillators(samples, volQ15, NUM_OSCILLATORS);
+      int16_t mixed = applyDistortion(mixOscillators(samples, volQ15, NUM_OSCILLATORS));
       buffer[frameIndex * 2 + 0] = mixed; // L
       buffer[frameIndex * 2 + 1] = mixed; // R
     }
