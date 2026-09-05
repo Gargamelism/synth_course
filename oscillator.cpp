@@ -20,17 +20,57 @@ void initSineTable() {
 
 int16_t g_harmonicWeightsQ15[NUM_HARMONICS];
 
+#if defined(HARMONIC_SPREAD_NATURAL)
+
+// The nth harmonic is 1/n as loud as the fundamental — a real string/wind
+// instrument's overtone falloff.
+static inline float harmonicWeightTerm(int h) {
+  return 1.0f / (h + 1);
+}
+
+#elif defined(HARMONIC_SPREAD_OCTAVE)
+
+// Only octave harmonics (1x, 2x, 4x, 8x, 16x...) sound, each at the natural
+// series' 1/n falloff; every non-octave harmonic is silent. Sparse and
+// hollow, like an organ's octave-only stops.
+static inline bool isPowerOfTwo(int n) {
+  return n > 0 && (n & (n - 1)) == 0;
+}
+static inline float harmonicWeightTerm(int h) {
+  int n = h + 1;
+  return isPowerOfTwo(n) ? 1.0f / n : 0.0f;
+}
+
+#elif defined(HARMONIC_SPREAD_ODD)
+
+// Only odd harmonics (1x, 3x, 5x...) sound, at the natural series' 1/n
+// falloff; even harmonics are silent — a square/clarinet-like spectrum.
+static inline float harmonicWeightTerm(int h) {
+  int n = h + 1;
+  return (n % 2 == 1) ? 1.0f / n : 0.0f;
+}
+
+#elif defined(HARMONIC_SPREAD_EQUAL)
+
+// Every harmonic at equal weight, no falloff — dense and buzzy.
+static inline float harmonicWeightTerm(int h) {
+  (void)h;
+  return 1.0f;
+}
+
+#endif
+
 void initHarmonicWeights() {
-  // Natural harmonic series: the nth harmonic is 1/n as loud as the
-  // fundamental. Sum first, then normalize so the weights add up to exactly
+  // Sum first, then normalize so the weights add up to exactly
   // VOLUME_Q15_ONE — this bounds the worst-case (all harmonics in phase)
-  // peak to SINE_TABLE_AMPLITUDE, same as a single un-enriched sine.
+  // peak to SINE_TABLE_AMPLITUDE, same as a single un-enriched sine,
+  // regardless of which HARMONIC_SPREAD_* is selected in oscillator.h.
   float sum = 0.0f;
   for (int h = 0; h < NUM_HARMONICS; h++) {
-    sum += 1.0f / (h + 1);
+    sum += harmonicWeightTerm(h);
   }
   for (int h = 0; h < NUM_HARMONICS; h++) {
-    float weight = (1.0f / (h + 1)) / sum;
+    float weight = harmonicWeightTerm(h) / sum;
     g_harmonicWeightsQ15[h] = (int16_t)(weight * VOLUME_Q15_ONE + 0.5f);
   }
 }

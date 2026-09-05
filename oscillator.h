@@ -3,12 +3,20 @@
 #include <stdint.h>
 #include "pins.h"
 
+// Harmonic spread used to build g_harmonicWeightsQ15 (see below). Pick
+// exactly ONE of the following and recompile. Only the selected spread's
+// code is compiled in via #ifdef in oscillator.cpp.
+#define HARMONIC_SPREAD_NATURAL
+// #define HARMONIC_SPREAD_OCTAVE
+// #define HARMONIC_SPREAD_ODD
+// #define HARMONIC_SPREAD_EQUAL
+
 // Phase-accumulator (DDS) sine oscillator, one instance per voice.
 class Oscillator {
 public:
   void begin();
   void setFrequency(float freqHz);
-  // Sums the fundamental with NUM_HARMONICS-1 natural overtones (see
+  // Sums the fundamental with NUM_HARMONICS-1 overtones (see
   // g_harmonicWeightsQ15), still clipped to the same +-SINE_TABLE_AMPLITUDE
   // peak a single sine had — mixOscillators/distortion.h rely on that.
   int16_t nextSample();
@@ -27,11 +35,12 @@ extern int16_t g_sineTable[SINE_TABLE_SIZE];
 void initSineTable();
 
 // Per-harmonic Q15 weight (index 0 = fundamental/1x .. NUM_HARMONICS-1 =
-// highest overtone), generated once in initHarmonicWeights(): a natural
-// (1/n) harmonic series, normalized so the weights sum to VOLUME_Q15_ONE —
-// keeps a single oscillator's peak within SINE_TABLE_AMPLITUDE, the same
-// invariant mixOscillators already assumes. Computed at startup (not
-// hardcoded) so NUM_HARMONICS can change without hand-updating weights.
+// highest overtone), generated once in initHarmonicWeights() using the
+// HARMONIC_SPREAD_* selected above, normalized so the weights sum to
+// VOLUME_Q15_ONE — keeps a single oscillator's peak within
+// SINE_TABLE_AMPLITUDE, the same invariant mixOscillators already assumes.
+// Computed at startup (not hardcoded) so NUM_HARMONICS can change without
+// hand-updating weights.
 extern int16_t g_harmonicWeightsQ15[NUM_HARMONICS];
 void initHarmonicWeights();
 
