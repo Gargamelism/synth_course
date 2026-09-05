@@ -36,6 +36,8 @@ static const int k_HarmonicsCode = 2;
 static const int k_HarmonicsCode = 3;
 #elif defined(HARMONIC_SPREAD_EQUAL)
 static const int k_HarmonicsCode = 4;
+#elif defined(HARMONIC_SPREAD_VIOLA)
+static const int k_HarmonicsCode = 5;
 #endif
 
 static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {

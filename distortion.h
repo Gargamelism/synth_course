@@ -11,7 +11,7 @@
 // #define DISTORTION_HARD_CLIP
 // #define DISTORTION_SOFT_CLIP
 // #define DISTORTION_FOLDBACK
-#define DISTORTION_BITCRUSH
+// #define DISTORTION_BITCRUSH
 
 // Integer gain applied before clipping/folding (not used by bitcrush).
 // Higher = more aggressive distortion.

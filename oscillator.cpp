@@ -37,7 +37,7 @@ static inline bool isPowerOfTwo(int n) {
   return n > 0 && (n & (n - 1)) == 0;
 }
 static inline float harmonicWeightTerm(int h) {
-  int n = h + 1;
+  const int n = h + 1;
   return isPowerOfTwo(n) ? 1.0f / n : 0.0f;
 }
 
@@ -46,7 +46,7 @@ static inline float harmonicWeightTerm(int h) {
 // Only odd harmonics (1x, 3x, 5x...) sound, at the natural series' 1/n
 // falloff; even harmonics are silent — a square/clarinet-like spectrum.
 static inline float harmonicWeightTerm(int h) {
-  int n = h + 1;
+  const int n = h + 1;
   return (n % 2 == 1) ? 1.0f / n : 0.0f;
 }
 
@@ -56,6 +56,23 @@ static inline float harmonicWeightTerm(int h) {
 static inline float harmonicWeightTerm(int h) {
   (void)h;
   return 1.0f;
+}
+
+#elif defined(HARMONIC_SPREAD_VIOLA)
+
+// Cheap bowed-string approximation: natural 1/n falloff, plus a boosted
+// "formant" bump on the 3rd-6th harmonics (the nasal, woody quality that
+// separates a viola from a plain sawtooth spectrum), plus a faster rolloff
+// above the 8th harmonic for a mellower top end. The bump sits on fixed
+// harmonic numbers rather than a fixed frequency, so — unlike a real
+// viola's body resonance — it shifts with pitch instead of staying put;
+// still close enough to be recognizable across this synth's pitch range.
+static inline float harmonicWeightTerm(int h) {
+  const int n = h + 1;
+  const float falloff = 1.0f / n;
+  const float formant = (n >= 3 && n <= 6) ? 1.6f : 1.0f;
+  const float highRolloff = (n > 8) ? 0.5f : 1.0f;
+  return falloff * formant * highRolloff;
 }
 
 #endif
@@ -70,7 +87,7 @@ void initHarmonicWeights() {
     sum += harmonicWeightTerm(h);
   }
   for (int h = 0; h < NUM_HARMONICS; h++) {
-    float weight = harmonicWeightTerm(h) / sum;
+    const float weight = harmonicWeightTerm(h) / sum;
     g_harmonicWeightsQ15[h] = (int16_t)(weight * VOLUME_Q15_ONE + 0.5f);
   }
 }

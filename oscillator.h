@@ -6,10 +6,11 @@
 // Harmonic spread used to build g_harmonicWeightsQ15 (see below). Pick
 // exactly ONE of the following and recompile. Only the selected spread's
 // code is compiled in via #ifdef in oscillator.cpp.
-#define HARMONIC_SPREAD_NATURAL
+// #define HARMONIC_SPREAD_NATURAL
 // #define HARMONIC_SPREAD_OCTAVE
 // #define HARMONIC_SPREAD_ODD
 // #define HARMONIC_SPREAD_EQUAL
+#define HARMONIC_SPREAD_VIOLA
 
 // Phase-accumulator (DDS) sine oscillator, one instance per voice.
 class Oscillator {
