@@ -56,7 +56,7 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 #define SINE_TABLE_AMPLITUDE 9000 // keeps 3-osc full-volume sum inside int16_t range
 #define AUDIO_BLOCK_FRAMES 256    // stereo frames generated + written per I2S block
 
-#define NUM_HARMONICS 6  // fundamental (1x) + 5 natural overtones (2x..6x)
+#define NUM_HARMONICS 22  // fundamental (1x) + n natural overtones (2x..nx) - max=22
 
 // Per-voice volume is carried into the mixer as a Q15 fixed-point fraction
 // (0 .. VOLUME_Q15_ONE == 0.0 .. 1.0) so the per-sample mix stays integer-only
