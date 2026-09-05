@@ -42,6 +42,8 @@ void controlsBegin() {
     s_pitchLastRaw[potIndex] = pitchRaw;
   }
 
+  pinMode(PIN_AUDIO_SWITCH, INPUT_PULLUP);
+
   g_paramsMutex = xSemaphoreCreateMutex();
 
   xSemaphoreTake(g_paramsMutex, portMAX_DELAY);
@@ -49,6 +51,7 @@ void controlsBegin() {
     g_oscParams.freqHz[oscIndex] = FREQ_MIN_HZ;
     g_oscParams.volume[oscIndex] = 0.0f;
   }
+  g_oscParams.audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
   xSemaphoreGive(g_paramsMutex);
 }
 
@@ -70,11 +73,14 @@ void controlsUpdate() {
     float pitchNorm = constrain(pitchFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
     freq[potIndex] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
   }
+  bool audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
+
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
     for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
       g_oscParams.freqHz[oscIndex] = freq[oscIndex];
       g_oscParams.volume[oscIndex] = vol[oscIndex];
     }
+    g_oscParams.audioOn = audioOn;
     xSemaphoreGive(g_paramsMutex);
   }
 }

@@ -49,6 +49,13 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 // Liveness LED — the board's onboard LED. Active-low: LOW turns it on.
 #define PIN_STATUS_LED 8
 
+// Audio on/off toggle switch — SPST, wired between this pin and GND, read
+// with the internal pull-up (INPUT_PULLUP): open = HIGH = off (muted),
+// closed = LOW = on. GPIO21 is UART0 TX, free here for the same reason
+// GPIO20 is free for I2S BCK — "USB CDC On Boot" moves the console off
+// UART0.
+#define PIN_AUDIO_SWITCH 21
+
 // Audio constants
 #define NUM_OSCILLATORS   1
 #define SAMPLE_RATE_HZ    44100

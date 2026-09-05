@@ -24,12 +24,16 @@ static void audioTask(void *arg) {
     // loop; if the control task momentarily holds the mutex, just reuse
     // last block's values (inaudible at block granularity).
     if (xSemaphoreTake(g_paramsMutex, 0) == pdTRUE) {
+      bool audioOn = g_oscParams.audioOn;
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
         freq[oscIndex] = g_oscParams.freqHz[oscIndex];
         // Convert 0.0-1.0 volume to Q15 once per block (not per sample) so
-        // the only float math left is off the per-sample hot path.
-        volQ15[oscIndex] =
-            (int16_t)(g_oscParams.volume[oscIndex] * VOLUME_Q15_ONE + 0.5f);
+        // the only float math left is off the per-sample hot path. The
+        // PIN_AUDIO_SWITCH gate forces this to 0 regardless of the volume
+        // pot, muting every oscillator while it's off.
+        volQ15[oscIndex] = audioOn
+            ? (int16_t)(g_oscParams.volume[oscIndex] * VOLUME_Q15_ONE + 0.5f)
+            : 0;
       }
       xSemaphoreGive(g_paramsMutex);
       for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {

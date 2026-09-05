@@ -16,27 +16,26 @@ static const char *k_Title = "SI SY";
 // Compile-time codes for the DISTORTION_*/HARMONIC_SPREAD_* macro picked in
 // distortion.h/oscillator.h, shown on-screen so the active build is visible
 // without cracking open those headers.
-static const int k_DistortionCode = 0; // default
 #if defined(DISTORTION_HARD_CLIP)
-k_DistortionCode = 1;
+static const int k_DistortionCode = 1;
 #elif defined(DISTORTION_SOFT_CLIP)
-k_DistortionCode = 2;
+static const int k_DistortionCode = 2;
 #elif defined(DISTORTION_FOLDBACK)
-k_DistortionCode = 3;
+static const int k_DistortionCode = 3;
 #elif defined(DISTORTION_BITCRUSH)
-k_DistortionCode = 4;
+static const int k_DistortionCode = 4;
+#else
+static const int k_DistortionCode = 0; // passthrough
 #endif
 
-
-static const int k_HarmonicsCode = 0; // default
 #if defined(HARMONIC_SPREAD_NATURAL)
-k_HarmonicsCode = 1;
+static const int k_HarmonicsCode = 1;
 #elif defined(HARMONIC_SPREAD_OCTAVE)
-k_HarmonicsCode = 2;
+static const int k_HarmonicsCode = 2;
 #elif defined(HARMONIC_SPREAD_ODD)
-k_HarmonicsCode = 3;
+static const int k_HarmonicsCode = 3;
 #elif defined(HARMONIC_SPREAD_EQUAL)
-k_HarmonicsCode = 4;
+static const int k_HarmonicsCode = 4;
 #endif
 
 static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {
