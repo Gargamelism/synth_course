@@ -5,11 +5,39 @@
 #include "pins.h"
 #include "controls.h"
 #include "notes.h"
+#include "distortion.h"
+#include "oscillator.h"
 
 // The SSD1306 buffer is 128x64; this board only shows a 72x40 window at
 // (OLED_X_OFFSET, OLED_Y_OFFSET), so every draw below is shifted by that.
 static Adafruit_SSD1306 s_display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
-static const char *k_Title = "SINE SYNTH D B";
+static const char *k_Title = "SI SY";
+
+// Compile-time codes for the DISTORTION_*/HARMONIC_SPREAD_* macro picked in
+// distortion.h/oscillator.h, shown on-screen so the active build is visible
+// without cracking open those headers.
+static const int k_DistortionCode = 0; // default
+#if defined(DISTORTION_HARD_CLIP)
+k_DistortionCode = 1;
+#elif defined(DISTORTION_SOFT_CLIP)
+k_DistortionCode = 2;
+#elif defined(DISTORTION_FOLDBACK)
+k_DistortionCode = 3;
+#elif defined(DISTORTION_BITCRUSH)
+k_DistortionCode = 4;
+#endif
+
+
+static const int k_HarmonicsCode = 0; // default
+#if defined(HARMONIC_SPREAD_NATURAL)
+k_HarmonicsCode = 1;
+#elif defined(HARMONIC_SPREAD_OCTAVE)
+k_HarmonicsCode = 2;
+#elif defined(HARMONIC_SPREAD_ODD)
+k_HarmonicsCode = 3;
+#elif defined(HARMONIC_SPREAD_EQUAL)
+k_HarmonicsCode = 4;
+#endif
 
 static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) != pdTRUE) {
@@ -57,6 +85,14 @@ static void drawOscillatorRows(const float freq[NUM_OSCILLATORS], const float vo
   }
 }
 
+static void drawSettingsRow() {
+  // One row below the last oscillator row, so it never collides even if
+  // NUM_OSCILLATORS changes.
+  int rowY = OLED_Y_OFFSET + OLED_OSC_ROW_TOP_PX + NUM_OSCILLATORS * OLED_OSC_ROW_SPACING_PX;
+  s_display.setCursor(OLED_X_OFFSET, rowY);
+  s_display.printf("D%d/H%d", k_DistortionCode, k_HarmonicsCode);
+}
+
 static void drawFlatline() {
   // EKG-style flatline across the visible window's vertical center.
   int lineY = OLED_Y_OFFSET + OLED_VISIBLE_HEIGHT / 2;
@@ -92,6 +128,7 @@ void displayUpdate() {
   } else {
     drawFlatline();
   }
+  drawSettingsRow();
 
   s_display.display();
 }
