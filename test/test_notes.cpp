@@ -12,7 +12,7 @@
 static void runTests() {
   // Concert A and its octaves — exact semitone integers.
   CHECK_NOTE(440.0f, "A4");
-  CHECK_NOTE(220.0f, "A3"); // OSC3_FIXED_FREQ_HZ
+  CHECK_NOTE(220.0f, "A3");
   CHECK_NOTE(880.0f, "A5");
 
   // Middle C, and a sharp name pulled from kNoteNames.

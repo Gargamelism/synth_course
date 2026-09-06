@@ -36,15 +36,17 @@
 #define OLED_Y_OFFSET 24
 
 // Compact status layout inside the visible window (see display.cpp).
-const int OLED_OSC_ROW_TOP_PX     = 12; // first oscillator row's y, from the window top
-const int OLED_OSC_ROW_SPACING_PX = 9;
+const int OLED_STATUS_ROW_TOP_PX     = 12; // first status row's y, from the window top
+const int OLED_STATUS_ROW_SPACING_PX = 9;
 const int OLED_TEXT_HEIGHT_PX     = 8;  // Adafruit GFX size-1 glyph height
 const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the window's left
 
-// Single sine voice: one volume pot + one pitch pot.
+// Two pots for the whole instrument: one MASTER volume and one pitch. Every
+// voice in kVoices (voices.h) is pitched relative to this single pitch pot
+// and scaled by this single volume pot, so the pot count no longer grows
+// with the voice count.
 #define PIN_POT_VOL1 0
 #define PIN_POT_PITCH1 3
-#define NUM_PITCH_POTS 1
 
 // Liveness LED — the board's onboard LED. Active-low: LOW turns it on.
 #define PIN_STATUS_LED 8
@@ -56,14 +58,21 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 // UART0.
 #define PIN_AUDIO_SWITCH 21
 
-// Audio constants
-#define NUM_OSCILLATORS   1
+// Audio constants. NUM_VOICES is not here — it comes from the kVoices table
+// in voices.h, which is where an instrument is defined.
 #define SAMPLE_RATE_HZ    44100
-#define SINE_TABLE_SIZE   256
-#define SINE_TABLE_AMPLITUDE 9000 // keeps 3-osc full-volume sum inside int16_t range
+#define SINE_TABLE_SIZE   1024
+// Peak amplitude of the sine table and of every composite wavetable built
+// from it. Nearly full-scale: kVoices' levels are normalized to sum to
+// VOLUME_Q15_ONE (see normalizeVoiceLevelsQ15), so the full-volume mix peaks
+// here whatever the voice count — no headroom needs reserving per voice.
+#define SINE_TABLE_AMPLITUDE 32000
 #define AUDIO_BLOCK_FRAMES 256    // stereo frames generated + written per I2S block
 
-#define NUM_HARMONICS 22  // fundamental (1x) + n natural overtones (2x..nx) - max=22
+#define NUM_HARMONICS 22  // fundamental (1x) + n overtones (2x..nx), at the
+                          // bottom of the pitch range; the wavetable mip
+                          // levels drop harmonics as pitch rises so the
+                          // series never crosses Nyquist (see oscillator.h)
 
 // Per-voice volume is carried into the mixer as a Q15 fixed-point fraction
 // (0 .. VOLUME_Q15_ONE == 0.0 .. 1.0) so the per-sample mix stays integer-only
@@ -75,13 +84,6 @@ const int VOLUME_Q15_ONE   = (1 << VOLUME_Q15_SHIFT) - 1; // 32767
 // Pitch mapping range (Hz), exponential across the pot sweep
 #define FREQ_MIN_HZ 80.0f
 #define FREQ_MAX_HZ 1000.0f
-
-// Guards against a future FREQ_MAX_HZ/NUM_HARMONICS change silently letting
-// the highest harmonic exceed Nyquist (SAMPLE_RATE_HZ / 2), which would
-// alias instead of sounding like a natural overtone.
-static_assert(FREQ_MAX_HZ * NUM_HARMONICS < SAMPLE_RATE_HZ / 2.0f,
-              "Highest harmonic exceeds Nyquist frequency - aliasing will occur. "
-              "Reduce NUM_HARMONICS or FREQ_MAX_HZ.");
 
 // ADC resolution — 12 is the ESP32 hardware ADC's native/max bit depth
 const int ADC_RESOLUTION_BITS = 12;

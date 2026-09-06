@@ -1,14 +1,14 @@
 # synth_course
 
-3-oscillator sine synth on the ABRobot ESP32-C3 0.42" OLED board: 3 volumes + 2 pitches via potentiometers (oscillator 3 runs at a fixed pitch), audio out over I2S to an external DAC, live status on the built-in 0.42" OLED, and a blinking onboard LED as a liveness indicator.
+Polyphonic wavetable synth on the ABRobot ESP32-C3 0.42" OLED board: a master volume pot and a pitch pot drive every voice in the `kVoices` table (`voices.h`), audio out over I2S to an external DAC, live status on the built-in 0.42" OLED, and a blinking onboard LED as a liveness indicator.
 
 ## Hardware
 
 - ABRobot ESP32-C3 0.42" OLED dev board — an ESP32-C3 with a **built-in** SSD1306 OLED (72x40 visible, I2C on GPIO5/6) and an onboard LED on GPIO8 used as a liveness indicator
 - PCM5102 I2S DAC breakout
-- 5x potentiometers (3 volume, 2 pitch)
+- 2x potentiometers (master volume, pitch)
 
-> **Why 5 pots, not 6:** the ESP32-C3 has only 6 ADC-capable pins and this board's built-in OLED permanently uses one of them (GPIO5). That leaves 5 for pots, so oscillator 3 has no pitch knob — it plays a fixed 220 Hz (`OSC3_FIXED_FREQ_HZ`).
+> **Two pots for any number of voices:** every voice is scaled by the one volume pot and pitched relative to the one pitch pot — as a diatonic chord whose quality follows the root, or as a detuned unison (`VOICE_PITCH_*` in `voices.h`). Add voices by adding rows to `kVoices`, not knobs.
 
 See `pins.h` for wiring/pin assignments.
 

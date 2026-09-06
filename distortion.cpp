@@ -15,18 +15,22 @@ int16_t applyDistortion(int16_t sample) {
 
 #elif defined(DISTORTION_SOFT_CLIP)
 
-// Cubic soft-clip: y = x - x^3/kCubicDivisor, evaluated entirely in Q15
+// Cubic soft-clip: y = x - x^3/3, evaluated entirely in Q15
 // fixed point (VOLUME_Q15_SHIFT, the same fixed-point format the mixer
 // uses) so it stays integer-only on the FPU-less C3. The curve is
 // monotonic and self-bounded for |x| <= 32767, so no final clamp is
 // needed.
 int16_t applyDistortion(int16_t sample) {
-  const int32_t kCubicDivisor = 3; // the "/3" in y = x - x^3/3
+  // 1/3 as a Q16 reciprocal (65536/3 rounded up): a multiply-and-shift
+  // instead of the multi-cycle hardware divide -Os emits for "/ 3". The
+  // error is under 1e-4, so the curve stays monotonic and self-bounded —
+  // which a power-of-two divisor would not preserve.
+  const int32_t kCubicReciprocalQ16 = 21846; // ~ (1 << 16) / 3
 
   int32_t x = clampToInt16((int32_t)sample * DISTORTION_DRIVE_GAIN);
   int32_t x2 = (x * x) >> VOLUME_Q15_SHIFT;  // x^2, still Q15
   int32_t x3 = (x2 * x) >> VOLUME_Q15_SHIFT; // x^3, still Q15
-  return (int16_t)(x - x3 / kCubicDivisor);
+  return (int16_t)(x - ((x3 * kCubicReciprocalQ16) >> 16));
 }
 
 #elif defined(DISTORTION_FOLDBACK)

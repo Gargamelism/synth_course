@@ -1,23 +1,33 @@
 #include "controls.h"
 #include "controls_math.h"
+#include "notes.h"
+#include "scale.h"
 #include <math.h>
 
 OscParams g_oscParams;
 SemaphoreHandle_t g_paramsMutex;
 
-static const int k_VolPins[] = {PIN_POT_VOL1};
-static const int k_PitchPins[] = {PIN_POT_PITCH1};
-static_assert(sizeof(k_VolPins) / sizeof(k_VolPins[0]) == NUM_OSCILLATORS,
-              "k_VolPins entries must match NUM_OSCILLATORS — add/remove PIN_POT_VOLn in pins.h");
-static_assert(sizeof(k_PitchPins) / sizeof(k_PitchPins[0]) == NUM_PITCH_POTS,
-              "k_PitchPins entries must match NUM_PITCH_POTS — add/remove PIN_POT_PITCHn in pins.h");
-static_assert(NUM_PITCH_POTS <= NUM_OSCILLATORS,
-              "can't have more pitch pots than oscillators");
+// One master volume pot and one pitch pot serve every voice, so neither
+// scales with NUM_VOICES any more.
+static float s_volFiltered;
+static float s_pitchFiltered;
+static int s_volLastRaw;
+static int s_pitchLastRaw;
 
-static float s_volFiltered[NUM_OSCILLATORS];
-static float s_pitchFiltered[NUM_PITCH_POTS];
-static int s_volLastRaw[NUM_OSCILLATORS];
-static int s_pitchLastRaw[NUM_PITCH_POTS];
+// Voice frequencies are recomputed only when the pot actually moves to a new
+// root — the diatonic path costs a powf per voice, which is fine in loop()
+// but pointless to repeat while the pot sits still.
+static float s_voiceFreq[NUM_VOICES];
+static float s_rootHz;
+
+#if defined(VOICE_PITCH_DIATONIC)
+static int s_lastRootDegree = INT32_MIN;
+#else
+// Unison detune: each voice's offset is a fixed ratio, so it is computed
+// once at startup and the pot sweep is a multiply.
+static float s_detuneRatio[NUM_VOICES];
+static float s_lastRootHz = -1.0f;
+#endif
 
 static int readOversampled(int pin) {
   long sum = 0;
@@ -27,19 +37,55 @@ static int readOversampled(int pin) {
   return (int)(sum / ADC_OVERSAMPLE_COUNT);
 }
 
+// Maps the smoothed pitch pot onto s_rootHz + s_voiceFreq[] for the pitch
+// mode selected in voices.h.
+static void updateVoiceFreqs(float pitchNorm) {
+  const float potHz = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
+
+#if defined(VOICE_PITCH_DIATONIC)
+  const int rootDegree = snapMidiToScaleDegree(freqToMidi(potHz));
+  if (rootDegree == s_lastRootDegree) {
+    return;
+  }
+  s_lastRootDegree = rootDegree;
+  s_rootHz = scaleDegreeToFreq(rootDegree);
+  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+    // Offsetting in scale degrees (not semitones) is what makes the chord's
+    // quality follow the root's position in the key.
+    s_voiceFreq[voiceIndex] = scaleDegreeToFreq(rootDegree + kVoices[voiceIndex].scaleDegree);
+  }
+#else
+  if (potHz == s_lastRootHz) {
+    return;
+  }
+  s_lastRootHz = potHz;
+  s_rootHz = potHz;
+  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+    s_voiceFreq[voiceIndex] = potHz * s_detuneRatio[voiceIndex];
+  }
+#endif
+}
+
 void controlsBegin() {
   analogReadResolution(ADC_RESOLUTION_BITS);
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    analogSetPinAttenuation(k_VolPins[oscIndex], ADC_11db);
-    int volRaw = analogRead(k_VolPins[oscIndex]);
-    s_volFiltered[oscIndex] = volRaw;
-    s_volLastRaw[oscIndex] = volRaw;
+
+  analogSetPinAttenuation(PIN_POT_VOL1, ADC_11db);
+  s_volLastRaw = analogRead(PIN_POT_VOL1);
+  s_volFiltered = s_volLastRaw;
+
+  analogSetPinAttenuation(PIN_POT_PITCH1, ADC_11db);
+  s_pitchLastRaw = analogRead(PIN_POT_PITCH1);
+  s_pitchFiltered = s_pitchLastRaw;
+
+#if defined(VOICE_PITCH_UNISON_DETUNE)
+  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+    s_detuneRatio[voiceIndex] = powf(2.0f, kVoices[voiceIndex].detuneCents / 1200.0f);
   }
-  for (int potIndex = 0; potIndex < NUM_PITCH_POTS; potIndex++) {
-    analogSetPinAttenuation(k_PitchPins[potIndex], ADC_11db);
-    int pitchRaw = analogRead(k_PitchPins[potIndex]);
-    s_pitchFiltered[potIndex] = pitchRaw;
-    s_pitchLastRaw[potIndex] = pitchRaw;
+#endif
+
+  s_rootHz = FREQ_MIN_HZ;
+  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+    s_voiceFreq[voiceIndex] = FREQ_MIN_HZ;
   }
 
   pinMode(PIN_AUDIO_SWITCH, INPUT_PULLUP);
@@ -47,39 +93,35 @@ void controlsBegin() {
   g_paramsMutex = xSemaphoreCreateMutex();
 
   xSemaphoreTake(g_paramsMutex, portMAX_DELAY);
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    g_oscParams.freqHz[oscIndex] = FREQ_MIN_HZ;
-    g_oscParams.volume[oscIndex] = 0.0f;
+  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+    g_oscParams.freqHz[voiceIndex] = FREQ_MIN_HZ;
   }
+  g_oscParams.rootHz = FREQ_MIN_HZ;
+  g_oscParams.volume = 0.0f;
   g_oscParams.audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
   xSemaphoreGive(g_paramsMutex);
 }
 
 void controlsUpdate() {
-  float freq[NUM_OSCILLATORS];
-  float vol[NUM_OSCILLATORS];
+  int volRaw = readOversampled(PIN_POT_VOL1);
+  float volFiltered = smoothValue(volRaw, &s_volFiltered, &s_volLastRaw,
+                                  ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
+  float volume = constrain(volFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
 
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    int volRaw = readOversampled(k_VolPins[oscIndex]);
-    float volFiltered = smoothValue(volRaw, &s_volFiltered[oscIndex], &s_volLastRaw[oscIndex],
-                                     ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-    vol[oscIndex] = constrain(volFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
-  }
+  int pitchRaw = readOversampled(PIN_POT_PITCH1);
+  float pitchFiltered = smoothValue(pitchRaw, &s_pitchFiltered, &s_pitchLastRaw,
+                                    ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
+  float pitchNorm = constrain(pitchFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
+  updateVoiceFreqs(pitchNorm);
 
-  for (int potIndex = 0; potIndex < NUM_PITCH_POTS; potIndex++) {
-    int pitchRaw = readOversampled(k_PitchPins[potIndex]);
-    float pitchFiltered = smoothValue(pitchRaw, &s_pitchFiltered[potIndex], &s_pitchLastRaw[potIndex],
-                                       ADC_HYSTERESIS_COUNTS, ADC_EMA_ALPHA);
-    float pitchNorm = constrain(pitchFiltered / (float)ADC_MAX_COUNT, 0.0f, 1.0f);
-    freq[potIndex] = mapPitchHz(pitchNorm, FREQ_MIN_HZ, FREQ_MAX_HZ);
-  }
   bool audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
 
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
-    for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-      g_oscParams.freqHz[oscIndex] = freq[oscIndex];
-      g_oscParams.volume[oscIndex] = vol[oscIndex];
+    for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
+      g_oscParams.freqHz[voiceIndex] = s_voiceFreq[voiceIndex];
     }
+    g_oscParams.rootHz = s_rootHz;
+    g_oscParams.volume = volume;
     g_oscParams.audioOn = audioOn;
     xSemaphoreGive(g_paramsMutex);
   }

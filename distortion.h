@@ -2,7 +2,8 @@
 
 #include <stdint.h>
 
-// Distortion stage applied to the final mixed sample in audio_task.cpp.
+// Distortion applied in audio_task.cpp, either per voice or to the mixed
+// sample (see DISTORTION_STAGE_* below).
 //
 // Pick exactly ONE of the following (or leave all commented out for a
 // clean passthrough) and recompile. Only the selected algorithm's code is
@@ -12,6 +13,26 @@
 // #define DISTORTION_SOFT_CLIP
 // #define DISTORTION_FOLDBACK
 // #define DISTORTION_BITCRUSH
+
+// Set when any flavor above is selected, so callers can skip the call
+// entirely (rather than call an identity function per voice per sample)
+// when distortion is off.
+#if defined(DISTORTION_HARD_CLIP) || defined(DISTORTION_SOFT_CLIP) || \
+    defined(DISTORTION_FOLDBACK) || defined(DISTORTION_BITCRUSH)
+#define DISTORTION_ENABLED
+#endif
+
+// Where the distortion sits relative to the mix. Pick exactly ONE.
+// PRE_MIX distorts each voice at full scale before it is scaled and summed,
+// so DISTORTION_DRIVE_GAIN means the same thing at any voice count and
+// voices don't intermodulate through one shared clipper. POST_MIX runs once
+// on the summed output — cheaper, and the way this synth used to behave.
+#define DISTORTION_STAGE_PRE_MIX
+// #define DISTORTION_STAGE_POST_MIX
+
+#if defined(DISTORTION_STAGE_PRE_MIX) == defined(DISTORTION_STAGE_POST_MIX)
+#error "Define exactly one of DISTORTION_STAGE_PRE_MIX / DISTORTION_STAGE_POST_MIX"
+#endif
 
 // Integer gain applied before clipping/folding (not used by bitcrush).
 // Higher = more aggressive distortion.

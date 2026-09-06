@@ -4,6 +4,7 @@
 #include <Adafruit_SSD1306.h>
 #include "pins.h"
 #include "controls.h"
+#include "voices.h"
 #include "notes.h"
 #include "distortion.h"
 #include "oscillator.h"
@@ -13,9 +14,9 @@
 static Adafruit_SSD1306 s_display(OLED_WIDTH, OLED_HEIGHT, &Wire, -1);
 static const char *k_Title = "SI SY";
 
-// Compile-time codes for the DISTORTION_*/HARMONIC_SPREAD_* macro picked in
-// distortion.h/oscillator.h, shown on-screen so the active build is visible
-// without cracking open those headers.
+// Compile-time codes for the build switches picked in distortion.h and
+// voices.h, shown on-screen so the active build is visible without cracking
+// open those headers.
 #if defined(DISTORTION_HARD_CLIP)
 static const int k_DistortionCode = 1;
 #elif defined(DISTORTION_SOFT_CLIP)
@@ -28,37 +29,34 @@ static const int k_DistortionCode = 4;
 static const int k_DistortionCode = 0; // passthrough
 #endif
 
-#if defined(HARMONIC_SPREAD_NATURAL)
-static const int k_HarmonicsCode = 1;
-#elif defined(HARMONIC_SPREAD_OCTAVE)
-static const int k_HarmonicsCode = 2;
-#elif defined(HARMONIC_SPREAD_ODD)
-static const int k_HarmonicsCode = 3;
-#elif defined(HARMONIC_SPREAD_EQUAL)
-static const int k_HarmonicsCode = 4;
-#elif defined(HARMONIC_SPREAD_VIOLA)
-static const int k_HarmonicsCode = 5;
+// No #else on purpose: an unknown pitch mode must fail the build rather
+// than quietly display the wrong thing.
+#if defined(VOICE_PITCH_DIATONIC)
+static const char *k_PitchModeCode = "DIA";
+#elif defined(VOICE_PITCH_UNISON_DETUNE)
+static const char *k_PitchModeCode = "UNI";
 #endif
 
-static bool snapshotOscParams(float freq[NUM_OSCILLATORS], float vol[NUM_OSCILLATORS]) {
+// Voice 0's spread, 1-based to keep the codes the old H field used
+// (natural = 1 .. viola = 5), plus a "*" when the other voices don't all
+// share it. Both are compile-time constants folded out of kVoices.
+static const int k_SpreadCode = (int)kVoices[0].spread + 1;
+static const char *k_SpreadSuffix = voiceSpreadsMixed() ? "*" : "";
+
+// Only the root note and the master volume are on screen, so the display
+// holds the mutex just long enough to copy those two.
+static bool snapshotStatus(float *rootHz, float *volume) {
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) != pdTRUE) {
     return false; // skip this refresh rather than block
   }
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    freq[oscIndex] = g_oscParams.freqHz[oscIndex];
-    vol[oscIndex] = g_oscParams.volume[oscIndex];
-  }
+  *rootHz = g_oscParams.rootHz;
+  *volume = g_oscParams.volume;
   xSemaphoreGive(g_paramsMutex);
   return true;
 }
 
-static bool anyOscillatorActive(const float vol[NUM_OSCILLATORS]) {
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    if (vol[oscIndex] > 0.0f) {
-      return true;
-    }
-  }
-  return false;
+static int rowY(int row) {
+  return OLED_Y_OFFSET + OLED_STATUS_ROW_TOP_PX + row * OLED_STATUS_ROW_SPACING_PX;
 }
 
 static void drawTitle() {
@@ -66,37 +64,44 @@ static void drawTitle() {
   s_display.print(k_Title);
 }
 
-static void drawOscillatorRows(const float freq[NUM_OSCILLATORS], const float vol[NUM_OSCILLATORS]) {
+// Row 0: the root note the pitch pot is on, plus the master volume as a
+// proportional bar filling the rest of the row.
+static void drawRootRow(float rootHz, float volume) {
   char noteBuf[NOTE_NAME_BUF_SIZE];
+  freqToNoteName(rootHz, noteBuf);
+
+  const int y = rowY(0);
+  s_display.setCursor(OLED_X_OFFSET, y);
+  s_display.printf("%-3s", noteBuf);
+
   const int barX = OLED_X_OFFSET + OLED_VOL_BAR_X_PX;
   const int barW = OLED_VISIBLE_WIDTH - OLED_VOL_BAR_X_PX;
-  for (int oscIndex = 0; oscIndex < NUM_OSCILLATORS; oscIndex++) {
-    int rowY = OLED_Y_OFFSET + OLED_OSC_ROW_TOP_PX + oscIndex * OLED_OSC_ROW_SPACING_PX;
-    freqToNoteName(freq[oscIndex], noteBuf);
-
-    s_display.setCursor(OLED_X_OFFSET, rowY);
-    s_display.printf("%-3s", noteBuf);
-
-    // Volume as a proportional bar filling the rest of the row.
-    s_display.drawRect(barX, rowY, barW, OLED_TEXT_HEIGHT_PX, SSD1306_WHITE);
-    int fillW = (int)(vol[oscIndex] * (barW - 2) + 0.5f);
-    if (fillW > 0) {
-      s_display.fillRect(barX + 1, rowY + 1, fillW, OLED_TEXT_HEIGHT_PX - 2, SSD1306_WHITE);
-    }
+  s_display.drawRect(barX, y, barW, OLED_TEXT_HEIGHT_PX, SSD1306_WHITE);
+  int fillW = (int)(volume * (barW - 2) + 0.5f);
+  if (fillW > 0) {
+    s_display.fillRect(barX + 1, y + 1, fillW, OLED_TEXT_HEIGHT_PX - 2, SSD1306_WHITE);
   }
 }
 
+// Row 1: how many voices are sounding and how they are pitched relative to
+// the root — the summary that replaces the old per-oscillator rows, which
+// stopped fitting the 40 px window well before MAX_VOICES.
+static void drawVoiceRow() {
+  s_display.setCursor(OLED_X_OFFSET, rowY(1));
+  s_display.printf("V%d %s", NUM_VOICES, k_PitchModeCode);
+}
+
+// Row 2: the build switches — distortion flavor and voice 0's harmonic
+// spread ("*" if the other voices use different ones).
 static void drawSettingsRow() {
-  // One row below the last oscillator row, so it never collides even if
-  // NUM_OSCILLATORS changes.
-  int rowY = OLED_Y_OFFSET + OLED_OSC_ROW_TOP_PX + NUM_OSCILLATORS * OLED_OSC_ROW_SPACING_PX;
-  s_display.setCursor(OLED_X_OFFSET, rowY);
-  s_display.printf("D%d/H%d", k_DistortionCode, k_HarmonicsCode);
+  s_display.setCursor(OLED_X_OFFSET, rowY(2));
+  s_display.printf("D%d/S%d%s", k_DistortionCode, k_SpreadCode, k_SpreadSuffix);
 }
 
 static void drawFlatline() {
-  // EKG-style flatline across the visible window's vertical center.
-  int lineY = OLED_Y_OFFSET + OLED_VISIBLE_HEIGHT / 2;
+  // EKG-style flatline in place of the root/volume row while the synth is
+  // silent.
+  int lineY = rowY(0) + OLED_TEXT_HEIGHT_PX / 2;
   s_display.drawLine(OLED_X_OFFSET, lineY,
                      OLED_X_OFFSET + OLED_VISIBLE_WIDTH - 1, lineY, SSD1306_WHITE);
 }
@@ -115,20 +120,21 @@ bool displayBegin() {
 }
 
 void displayUpdate() {
-  float freq[NUM_OSCILLATORS];
-  float vol[NUM_OSCILLATORS];
-  if (!snapshotOscParams(freq, vol)) {
+  float rootHz;
+  float volume;
+  if (!snapshotStatus(&rootHz, &volume)) {
     return;
   }
 
   s_display.clearDisplay();
   drawTitle();
 
-  if (anyOscillatorActive(vol)) {
-    drawOscillatorRows(freq, vol);
+  if (volume > 0.0f) {
+    drawRootRow(rootHz, volume);
   } else {
     drawFlatline();
   }
+  drawVoiceRow();
   drawSettingsRow();
 
   s_display.display();

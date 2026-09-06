@@ -1,11 +1,13 @@
-// Single-oscillator sine synth: one volume + one pitch potentiometer,
-// audio out over I2S to an external DAC, live status on the board's
-// built-in 0.42" OLED.
-// See pins.h for wiring, oscillator/audio_task for the DSP + Core-0 audio
-// path, controls for the loop() pot reading, display for the OLED.
+// Polyphonic wavetable synth: one master volume + one pitch potentiometer
+// drive every voice in the kVoices table, audio out over I2S to an external
+// DAC, live status on the board's built-in 0.42" OLED.
+// See voices.h for the instrument itself, pins.h for wiring, oscillator/
+// audio_task for the DSP + Core-0 audio path, scale for the diatonic pitch
+// math, controls for the loop() pot reading, display for the OLED.
 
 #include "pins.h"
 #include "oscillator.h"
+#include "voices.h"
 #include "controls.h"
 #include "audio_task.h"
 #include "display.h"
@@ -19,7 +21,9 @@ void setup() {
   delay(200);
 
   initSineTable();
-  initHarmonicWeights();
+  if (!initWavetables()) {
+    Serial.println("wavetable allocation failed - voices using an unbuilt spread will be silent");
+  }
   controlsBegin();
   pinMode(PIN_STATUS_LED, OUTPUT);
 
@@ -29,7 +33,8 @@ void setup() {
 
   audioTaskBegin();
 
-  Serial.println("3-osc synth running");
+  Serial.printf("synth running: %d voices, free heap %u bytes\n",
+                NUM_VOICES, (unsigned)ESP.getFreeHeap());
 }
 
 void loop() {
