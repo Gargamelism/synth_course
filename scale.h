@@ -9,9 +9,9 @@
 // Kept free of Arduino headers so test/run.sh can build it on the host.
 
 // The key, fixed at compile time. Pick exactly ONE mode.
-#define SCALE_KEY_ROOT_MIDI 60 // C4
-#define SCALE_MAJOR
-// #define SCALE_MINOR
+#define SCALE_KEY_ROOT_MIDI 40 // E2
+// #define SCALE_MAJOR
+#define SCALE_MINOR
 
 const int SCALE_DEGREES_PER_OCTAVE = 7;
 

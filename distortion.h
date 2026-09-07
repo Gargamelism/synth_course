@@ -12,7 +12,7 @@
 // #define DISTORTION_HARD_CLIP
 // #define DISTORTION_SOFT_CLIP
 // #define DISTORTION_FOLDBACK
-// #define DISTORTION_BITCRUSH
+#define DISTORTION_BITCRUSH
 
 // Set when any flavor above is selected, so callers can skip the call
 // entirely (rather than call an identity function per voice per sample)
