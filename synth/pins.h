@@ -11,9 +11,9 @@
 // IDE (which this project requires: it routes the serial console over native
 // USB and frees GPIO20/21 for other use).
 
-// I2S DAC (PCM5102 breakout). BCK sits on GPIO20 — a UART0 pin, free here
-// only because USB CDC On Boot moves the console to native USB. Its usual
-// home, GPIO6, is the OLED's SCL on this board.
+// I2S audio out (MAX98357A Class-D amp breakout). BCK sits on GPIO20 — a
+// UART0 pin, free here only because USB CDC On Boot moves the console to
+// native USB. Its usual home, GPIO6, is the OLED's SCL on this board.
 #define PIN_I2S_BCK  20
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10

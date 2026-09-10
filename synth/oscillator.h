@@ -13,6 +13,7 @@ enum HarmonicSpread {
   SPREAD_ODD,         // odd harmonics only — square/clarinet-like
   SPREAD_EQUAL,       // no falloff — dense and buzzy
   SPREAD_VIOLA,       // 1/n plus a 3rd-6th formant bump, mellow top end
+  SPREAD_BASS_GUITAR,
   SPREAD_COUNT
 };
 

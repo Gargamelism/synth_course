@@ -30,60 +30,69 @@ struct VoiceConfig
 };
 
 #define VOICE_SOLO
-// #define VOICE_CHORD
+// #define VOICE_CHORD_HARMONY
+// #define VOICE_CHORD_METAL
 
-#if defined(VOICE_SOLO) == defined(VOICE_CHORD)
-#error "Define exactly one of VOICE_SOLO / VOICE_CHORD"
+#if defined(VOICE_SOLO) + defined(VOICE_CHORD_HARMONY) + defined(VOICE_CHORD_METAL) != 1
+#error "Define exactly one of VOICE_SOLO / VOICE_CHORD_HARMONY / VOICE_CHORD_METAL"
 #endif
 
-#if defined(VOICE_CHORD)
+#if defined(VOICE_CHORD_HARMONY)
 static constexpr VoiceConfig kVoices[] = {
     // degree, cents, spread,         level
     {0, 0, SPREAD_VIOLA, 100},
-    {2, -7, SPREAD_ODD, 90},
-    {4, 7, SPREAD_VIOLA, 80},
-    {6, 12, SPREAD_VIOLA, 70},
+    {2, 0, SPREAD_ODD, 90},
+    {4, 0, SPREAD_VIOLA, 80},
+    {6, 0, SPREAD_VIOLA, 70},
     {7, 0, SPREAD_VIOLA, 60},
-    {9, -7, SPREAD_NATURAL, 50},
-    {11, 7, SPREAD_ODD, 40},
-    {13, 12, SPREAD_VIOLA, 30},
+    {9, 0, SPREAD_NATURAL, 70},
+    {11, 0, SPREAD_ODD, 40},
+    {13, 0, SPREAD_VIOLA, 30},
+};
+#endif
+
+#if defined(VOICE_CHORD_METAL)
+static constexpr VoiceConfig kVoices[] = {
+    // degree, cents, spread,         level
+    {0, 0, SPREAD_VIOLA, 100},
+    {4, 0, SPREAD_ODD, 100}
 };
 #endif
 
 #if defined(VOICE_SOLO)
 static constexpr VoiceConfig kVoices[] = {
     // degree, cents, spread,         level
-    {0, 0, SPREAD_VIOLA, 100},
-    {7, -7, SPREAD_ODD, 50},
-    {12, 7, SPREAD_VIOLA, 10},
-    {14, 12, SPREAD_VIOLA, 7},
-    {16, 0, SPREAD_VIOLA, 10},
-    {18, -7, SPREAD_NATURAL, 6},
-    {19, 7, SPREAD_ODD, 5},
-    {20, 12, SPREAD_VIOLA, 3},
-    {21, -4, SPREAD_VIOLA, 5},
-    {22, 5, SPREAD_VIOLA, 7},
-    {23, 0, SPREAD_VIOLA, 2},
-    {24, -6, SPREAD_VIOLA, 1},
-    {25, 8, SPREAD_VIOLA, 5},
-    {26, 12, SPREAD_VIOLA, 3},
-    {27, -3, SPREAD_VIOLA, 6},
-    {28, -50, SPREAD_VIOLA, 1},
-    {29, -15, SPREAD_VIOLA, 16},
-    {30, 12, SPREAD_VIOLA, 4},
-    {31, 7, SPREAD_VIOLA, 3},
-    {32, 3, SPREAD_VIOLA, 2},
-    {33, 15, SPREAD_VIOLA, 6},
-    {34, 30, SPREAD_VIOLA, 3},
-    {35, 50, SPREAD_VIOLA, 1},
-    {36, 100, SPREAD_VIOLA, 7},
-    {37, 50, SPREAD_VIOLA, 1},
-    {38, 0, SPREAD_VIOLA, 2},
-    {39, -50, SPREAD_VIOLA, 1},
-    {40, -30, SPREAD_VIOLA, 3},
-    {41, -20, SPREAD_VIOLA, 4},
-    {42, -10, SPREAD_VIOLA, 1},
-    {43, 12, SPREAD_VIOLA, 3},
+    {0, 0, SPREAD_BASS_GUITAR, 100},
+    // {7, -7, SPREAD_ODD, 70},
+    // {12, 7, SPREAD_VIOLA, 50},
+    // {14, 12, SPREAD_VIOLA, 70},
+    // {16, 0, SPREAD_VIOLA, 40},
+    // {18, -7, SPREAD_NATURAL, 16},
+    // {19, 7, SPREAD_ODD, 18}
+    // {20, 12, SPREAD_VIOLA, 3},
+    // {21, -4, SPREAD_VIOLA, 5},
+    // {22, 5, SPREAD_VIOLA, 7},
+    // {23, 0, SPREAD_VIOLA, 2},
+    // {24, -6, SPREAD_VIOLA, 1},
+    // {25, 8, SPREAD_VIOLA, 5},
+    // {26, 12, SPREAD_VIOLA, 3},
+    // {27, -3, SPREAD_VIOLA, 6},
+    // {28, -50, SPREAD_VIOLA, 1},
+    // {29, -15, SPREAD_VIOLA, 16},
+    // {30, 12, SPREAD_VIOLA, 4},
+    // {31, 7, SPREAD_VIOLA, 3},
+    // {32, 3, SPREAD_VIOLA, 2},
+    // {33, 15, SPREAD_VIOLA, 6},
+    // {34, 30, SPREAD_VIOLA, 3},
+    // {35, 50, SPREAD_VIOLA, 1},
+    // {36, 100, SPREAD_VIOLA, 7},
+    // {37, 50, SPREAD_VIOLA, 1},
+    // {38, 0, SPREAD_VIOLA, 2},
+    // {39, -50, SPREAD_VIOLA, 1},
+    // {40, -30, SPREAD_VIOLA, 3},
+    // {41, -20, SPREAD_VIOLA, 4},
+    // {42, -10, SPREAD_VIOLA, 1},
+    // {43, 12, SPREAD_VIOLA, 3},
 };
 #endif
 

@@ -73,12 +73,27 @@ static float weightViola(int h) {
   return falloff * formant * highRolloff;
 }
 
+static float weightBassGuitar(int h) {
+  const int n = h + 1;
+  switch (n) {
+    case 1: return 1.0f;
+    case 2: return 0.3f;
+    // case 3: return 0.3f;
+    // case 4: return 0.3f;
+    // case 5: return 0.3f;
+    // case 6: return 0.3f;
+    // case 7: return 1.0f;
+    default: return 0.2f / n; // faster falloff above the 6th harmonic
+  }
+}
+
 static float harmonicWeightTerm(int spread, int h) {
   switch (spread) {
     case SPREAD_OCTAVE:  return weightOctave(h);
     case SPREAD_ODD:     return weightOdd(h);
     case SPREAD_EQUAL:   return weightEqual(h);
     case SPREAD_VIOLA:   return weightViola(h);
+    case SPREAD_BASS_GUITAR: return weightBassGuitar(h);
     case SPREAD_NATURAL:
     default:             return weightNatural(h);
   }

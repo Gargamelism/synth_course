@@ -27,9 +27,13 @@ See `pins.h` for wiring/pin assignments.
 
 1. Install the Arduino IDE and add the ESP32 board package (File → Preferences → Additional Board Manager URLs → `https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json`).
 2. Install the two Adafruit libraries listed above via Sketch → Include Library → Manage Libraries.
-3. Open `synth_course.ino`, select your board and serial port under Tools, then Upload.
+3. Open `synth/synth.ino`, select your board and serial port under Tools, then Upload.
 4. Open the Serial Monitor at 115200 baud to see startup logs.
 
 ## Wiring reference
 
-See the pin definitions and constants in `pins.h`.
+See the pin definitions and constants in `synth/pins.h`.
+
+## Speaker/amp test
+
+`player/` is a separate, standalone sketch that loops a short audio clip of your own choosing over I2S, with the master volume pot controlling level live — useful for checking the physical speaker's max clean volume and response with real material. See `player/player.ino`'s top comment for the WAV-conversion + `wav_to_header.py` steps.
