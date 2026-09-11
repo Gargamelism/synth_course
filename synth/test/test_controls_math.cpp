@@ -28,6 +28,23 @@ static void runTests() {
   CHECK_NEAR(mapPitchHz(1.0f, 80.0f, 1000.0f), 1000.0f, 1e-1f);
   // Midpoint of an exponential sweep is the geometric mean.
   CHECK_NEAR(mapPitchHz(0.5f, 80.0f, 1000.0f), std::sqrt(80.0f * 1000.0f), 1e-1f);
+
+  // quadratureStep: one full clockwise cycle around the Gray code (00 -> 01
+  // -> 11 -> 10 -> 00) scores +1 at every edge; the reverse cycle scores -1.
+  CHECK(quadratureStep(0b00, 0b01) == 1);
+  CHECK(quadratureStep(0b01, 0b11) == 1);
+  CHECK(quadratureStep(0b11, 0b10) == 1);
+  CHECK(quadratureStep(0b10, 0b00) == 1);
+  CHECK(quadratureStep(0b00, 0b10) == -1);
+  CHECK(quadratureStep(0b10, 0b11) == -1);
+  CHECK(quadratureStep(0b11, 0b01) == -1);
+  CHECK(quadratureStep(0b01, 0b00) == -1);
+  // A repeated state (no edge) or a two-bit jump (only possible via contact
+  // bounce — a real detent never skips a Gray code state) both score 0.
+  CHECK(quadratureStep(0b00, 0b00) == 0);
+  CHECK(quadratureStep(0b01, 0b01) == 0);
+  CHECK(quadratureStep(0b00, 0b11) == 0);
+  CHECK(quadratureStep(0b01, 0b10) == 0);
 }
 
 TEST_MAIN()

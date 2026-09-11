@@ -1,9 +1,12 @@
 // Polyphonic wavetable synth: one master volume + one pitch potentiometer
-// drive every voice in the kVoices table, audio out over I2S to an external
-// DAC, live status on the board's built-in 0.42" OLED.
-// See voices.h for the instrument itself, pins.h for wiring, oscillator/
-// audio_task for the DSP + Core-0 audio path, scale for the diatonic pitch
-// math, controls for the loop() pot reading, display for the OLED.
+// drive every voice in the active patch, an encoder cycles which patch
+// (voice table + pitch mode + matched distortion) plays and its click
+// toggles that distortion, audio out over I2S to an external DAC, live
+// status on the board's built-in 0.42" OLED.
+// See voices.h for the instrument itself (kPatches), pins.h for wiring,
+// oscillator/audio_task for the DSP + Core-0 audio path, scale for the
+// diatonic pitch math, controls for the loop() pot/encoder reading, display
+// for the OLED.
 
 #include "pins.h"
 #include "oscillator.h"
@@ -33,8 +36,8 @@ void setup() {
 
   audioTaskBegin();
 
-  Serial.printf("synth running: %d voices, free heap %u bytes\n",
-                NUM_VOICES, (unsigned)ESP.getFreeHeap());
+  Serial.printf("synth running: patch \"%s\" (%d voices), free heap %u bytes\n",
+                kPatches[0].label, kPatches[0].voiceCount, (unsigned)ESP.getFreeHeap());
 }
 
 void loop() {

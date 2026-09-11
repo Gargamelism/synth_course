@@ -42,9 +42,9 @@ const int OLED_TEXT_HEIGHT_PX     = 8;  // Adafruit GFX size-1 glyph height
 const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the window's left
 
 // Two pots for the whole instrument: one MASTER volume and one pitch. Every
-// voice in kVoices (voices.h) is pitched relative to this single pitch pot
-// and scaled by this single volume pot, so the pot count no longer grows
-// with the voice count.
+// voice in the active patch (kPatches, voices.h) is pitched relative to
+// this single pitch pot and scaled by this single volume pot, so the pot
+// count no longer grows with the voice count.
 #define PIN_POT_VOL1 0
 #define PIN_POT_PITCH1 3
 
@@ -58,14 +58,41 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 // UART0.
 #define PIN_AUDIO_SWITCH 21
 
-// Audio constants. NUM_VOICES is not here — it comes from the kVoices table
-// in voices.h, which is where an instrument is defined.
+// Rotary encoder (bare EC11-style, 5 pins: A/B/C + isolated switch S1/S2).
+// C and S1 wire to GND; only A, B, and S2 need GPIOs, which uses up the
+// last of the general-purpose pins this board has free. Rotation cycles
+// kPatches (voices.h); the push-button toggles the active patch's matched
+// distortion on/off. All three read with internal pull-ups (INPUT_PULLUP):
+// the encoder supplies none of its own.
+//
+// Identifying the physical legs on this encoder without a multimeter:
+// orient it with the 3-pin row (A/C/B) on your left and the 2-pin switch
+// row on your right. The top-left pin (of the 3) and the top-right pin
+// (of the 2) are both ground — those are C and S1.
+#define PIN_ENCODER_A  1
+#define PIN_ENCODER_B  2
+#define PIN_ENCODER_SW 4  // wired to S2; S1 -> GND
+
+// This EC11-style encoder's Gray code produces 4 quadrature edges per
+// mechanical detent (00->01->11->10->00 or the reverse) — controls.cpp
+// accumulates edges from quadratureStep() and only advances the patch once
+// every this many, so one click of the knob is one patch step.
+#define ENCODER_STEPS_PER_DETENT 4
+
+// Minimum time between accepted button edges — mechanical switch bounce on
+// a press/release is a few ms, well under this.
+#define ENCODER_BUTTON_DEBOUNCE_MS 30
+
+// Audio constants. NUM_VOICES is not here — voice count is a per-patch
+// runtime value (kPatches in voices.h, whose MAX_VOICES is the ceiling
+// every patch is checked against).
 #define SAMPLE_RATE_HZ    44100
 #define SINE_TABLE_SIZE   1024
 // Peak amplitude of the sine table and of every composite wavetable built
-// from it. Nearly full-scale: kVoices' levels are normalized to sum to
-// VOLUME_Q15_ONE (see normalizeVoiceLevelsQ15), so the full-volume mix peaks
-// here whatever the voice count — no headroom needs reserving per voice.
+// from it. Nearly full-scale: each patch's voice levels are normalized to
+// sum to VOLUME_Q15_ONE (see normalizeVoiceLevelsQ15), so the full-volume
+// mix peaks here whatever the voice count — no headroom needs reserving per
+// voice.
 #define SINE_TABLE_AMPLITUDE 32000
 #define AUDIO_BLOCK_FRAMES 256    // stereo frames generated + written per I2S block
 

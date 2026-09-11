@@ -1,6 +1,6 @@
 #pragma once
 
-// Diatonic scale math for VOICE_PITCH_DIATONIC (see voices.h): the pitch pot
+// Diatonic scale math for PITCH_DIATONIC (see voices.h): the pitch pot
 // picks a root that snaps to the key, and each voice adds a compile-time
 // offset in SCALE DEGREES. Chord quality therefore falls out of where the
 // root sits in the key (in C major, root C -> C E G major, root D -> D F A
@@ -12,6 +12,7 @@
 #define SCALE_KEY_ROOT_MIDI 40 // E2
 // #define SCALE_MAJOR
 #define SCALE_MINOR
+// #define SCALE_MINOR_MELODIC
 
 const int SCALE_DEGREES_PER_OCTAVE = 7;
 

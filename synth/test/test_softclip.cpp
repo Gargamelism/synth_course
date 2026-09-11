@@ -1,9 +1,11 @@
-// Tests DISTORTION_SOFT_CLIP's Q16 reciprocal against the integer divide it
-// replaces. distortion.cpp compiles exactly one flavor, chosen by a macro in
-// distortion.h, so the flavor is selected here and the translation unit is
-// included directly — which also keeps run.sh from auto-linking a second,
-// passthrough copy of it (it pairs test_<name>.cpp with ../<name>.cpp).
-#define DISTORTION_SOFT_CLIP
+// Tests DIST_SOFT_CLIP's Q16 reciprocal against the integer divide it
+// replaces. distortion.cpp compiles every flavor unconditionally now (the
+// encoder picks one at runtime), so this includes the translation unit
+// directly and calls applyDistortion(sample, DIST_SOFT_CLIP) through the
+// real dispatcher — the name test_softclip.cpp (not test_distortion.cpp)
+// keeps run.sh from also auto-linking ../distortion.cpp, which would
+// double-define everything in it (it pairs test_<name>.cpp with
+// ../<name>.cpp).
 #include "../distortion.cpp"
 #include "framework.h"
 
@@ -17,9 +19,9 @@ static int16_t softClipWithDivide(int16_t sample) {
 }
 
 static void runTests() {
-  int16_t previous = applyDistortion(INT16_MIN);
+  int16_t previous = applyDistortion(INT16_MIN, DIST_SOFT_CLIP);
   for (int32_t sample = INT16_MIN; sample <= INT16_MAX; sample += 7) {
-    const int16_t actual = applyDistortion((int16_t)sample);
+    const int16_t actual = applyDistortion((int16_t)sample, DIST_SOFT_CLIP);
 
     // Within 1 LSB of the divide it replaces.
     const int32_t difference = (int32_t)actual - softClipWithDivide((int16_t)sample);
@@ -32,8 +34,8 @@ static void runTests() {
   }
 
   // Silence in, silence out; the curve is odd-symmetric about zero.
-  CHECK(applyDistortion(0) == 0);
-  CHECK_NEAR(applyDistortion(1000), -applyDistortion(-1000), 1);
+  CHECK(applyDistortion(0, DIST_SOFT_CLIP) == 0);
+  CHECK_NEAR(applyDistortion(1000, DIST_SOFT_CLIP), -applyDistortion(-1000, DIST_SOFT_CLIP), 1);
 }
 
 TEST_MAIN()

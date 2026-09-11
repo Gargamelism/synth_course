@@ -150,9 +150,15 @@ static void buildTable(int16_t *table, int spread, int harmonicCount) {
 }
 
 bool initWavetables() {
+  // Every spread any patch might use has to be built up front: the encoder
+  // can switch kPatches at runtime, so "the instrument" is now the union
+  // of every patch's voices, not just the one active at startup.
   bool spreadUsed[SPREAD_COUNT] = {};
-  for (int voiceIndex = 0; voiceIndex < NUM_VOICES; voiceIndex++) {
-    spreadUsed[kVoices[voiceIndex].spread] = true;
+  for (int patchIndex = 0; patchIndex < NUM_PATCHES; patchIndex++) {
+    const Patch &patch = kPatches[patchIndex];
+    for (int voiceIndex = 0; voiceIndex < patch.voiceCount; voiceIndex++) {
+      spreadUsed[patch.voices[voiceIndex].spread] = true;
+    }
   }
 
   bool ok = true;

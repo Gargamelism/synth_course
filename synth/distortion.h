@@ -3,30 +3,26 @@
 #include <stdint.h>
 
 // Distortion applied in audio_task.cpp, either per voice or to the mixed
-// sample (see DISTORTION_STAGE_* below).
-//
-// Pick exactly ONE of the following (or leave all commented out for a
-// clean passthrough) and recompile. Only the selected algorithm's code is
-// compiled in via #ifdef in distortion.cpp — switching flavors never
-// uploads unused DSP code onto the FPU-less C3.
-// #define DISTORTION_HARD_CLIP
-// #define DISTORTION_SOFT_CLIP
-// #define DISTORTION_FOLDBACK
-// #define DISTORTION_BITCRUSH
+// sample (see DISTORTION_STAGE_* below). Which flavor plays is a per-patch,
+// runtime choice now (see DistortionType and Patch::distortion in
+// voices.h) — every flavor below is always compiled in so the encoder can
+// switch to any of them without a reflash.
 
-// Set when any flavor above is selected, so callers can skip the call
-// entirely (rather than call an identity function per voice per sample)
-// when distortion is off.
-#if defined(DISTORTION_HARD_CLIP) || defined(DISTORTION_SOFT_CLIP) || \
-    defined(DISTORTION_FOLDBACK) || defined(DISTORTION_BITCRUSH)
-#define DISTORTION_ENABLED
-#endif
+enum DistortionType {
+  DIST_NONE = 0,
+  DIST_HARD_CLIP,
+  DIST_SOFT_CLIP,
+  DIST_FOLDBACK,
+  DIST_BITCRUSH,
+};
 
 // Where the distortion sits relative to the mix. Pick exactly ONE.
 // PRE_MIX distorts each voice at full scale before it is scaled and summed,
 // so DISTORTION_DRIVE_GAIN means the same thing at any voice count and
 // voices don't intermodulate through one shared clipper. POST_MIX runs once
 // on the summed output — cheaper, and the way this synth used to behave.
+// This stays a build-time choice: unlike the flavor, it isn't part of what
+// the encoder switches.
 #define DISTORTION_STAGE_PRE_MIX
 // #define DISTORTION_STAGE_POST_MIX
 
@@ -46,6 +42,8 @@
 // 12 = extremely crushed.
 #define DISTORTION_BITCRUSH_BITS 8
 
-// Applies the selected distortion to one sample (a no-op if none of the
-// DISTORTION_* macros above is defined).
-int16_t applyDistortion(int16_t sample);
+// Applies `type` to one sample (DIST_NONE is a passthrough). The caller
+// (audio_task.cpp) skips this call entirely when the active patch's
+// distortion is toggled off, rather than routing every sample through a
+// DIST_NONE switch case.
+int16_t applyDistortion(int16_t sample, DistortionType type);

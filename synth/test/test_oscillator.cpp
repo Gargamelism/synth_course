@@ -40,7 +40,7 @@ static void runTests() {
   for (int spread = 0; spread < SPREAD_COUNT; spread++) {
     for (int level = 0; level < WAVETABLE_MIP_LEVELS; level++) {
       const int16_t *table = g_wavetable[spread][level];
-      if (table == nullptr) continue; // spread not referenced by kVoices
+      if (table == nullptr) continue; // spread not referenced by any kPatches entry
       for (int i = 0; i < WAVETABLE_SIZE; i++) {
         CHECK(table[i] >= -SINE_TABLE_AMPLITUDE && table[i] <= SINE_TABLE_AMPLITUDE);
       }
@@ -50,7 +50,7 @@ static void runTests() {
   // At freq = SAMPLE_RATE_HZ / WAVETABLE_SIZE the phase increment is exactly
   // 2^32 / WAVETABLE_SIZE, so each nextSample() advances the table index by
   // exactly 1 and the oscillator must walk its table in order, then wrap.
-  const HarmonicSpread spread = (HarmonicSpread)kVoices[0].spread;
+  const HarmonicSpread spread = (HarmonicSpread)kPatches[0].voices[0].spread;
   const float walkHz = (float)SAMPLE_RATE_HZ / WAVETABLE_SIZE;
   const int16_t *walkTable = g_wavetable[spread][mipLevelForFreq(walkHz)];
   Oscillator osc;

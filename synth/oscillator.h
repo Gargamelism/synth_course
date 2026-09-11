@@ -31,13 +31,16 @@ const int WAVETABLE_SIZE = SINE_TABLE_SIZE; // same size as the sine table, so
 const int WAVETABLE_MIP_LEVELS = 9;         // 80 Hz -> Nyquist is log2(22050/80) ~ 8.1 octaves
 const float WAVETABLE_MIP_BASE_HZ = FREQ_MIN_HZ;
 
-// g_wavetable[spread][level] is null unless some voice in kVoices uses that
-// spread — initWavetables() only allocates what the instrument references.
+// g_wavetable[spread][level] is null unless some voice in some kPatches
+// entry uses that spread — initWavetables() only allocates what any patch
+// references.
 extern const int16_t *g_wavetable[SPREAD_COUNT][WAVETABLE_MIP_LEVELS];
 
-// Builds the wavetables for every spread kVoices mentions. Returns false if
-// an allocation failed (each table is WAVETABLE_SIZE * 2 bytes, 9 per
-// spread). Call once from setup(), after initSineTable().
+// Builds the wavetables for every spread any kPatches entry mentions (not
+// just the one active at startup, since the encoder can switch patches at
+// runtime). Returns false if an allocation failed (each table is
+// WAVETABLE_SIZE * 2 bytes, 9 per spread). Call once from setup(), after
+// initSineTable().
 bool initWavetables();
 
 // Mip level for a playback frequency, clamped to the pyramid.
