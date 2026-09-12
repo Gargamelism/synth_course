@@ -138,16 +138,16 @@ static void updateVoiceFreqs(float pitchNorm, uint8_t patchIndex) {
 
   switch (patch.pitchMode) {
     case PITCH_DIATONIC: {
-      const int rootDegree = snapMidiToScaleDegree(freqToMidi(potHz));
+      const int rootDegree = snapMidiToScaleDegree(freqToMidi(potHz), patch.scale);
       if (rootDegree == s_lastRootDegree) {
         return;
       }
       s_lastRootDegree = rootDegree;
-      s_rootHz = scaleDegreeToFreq(rootDegree);
+      s_rootHz = scaleDegreeToFreq(rootDegree, patch.scale);
       for (int voiceIndex = 0; voiceIndex < patch.voiceCount; voiceIndex++) {
         // Offsetting in scale degrees (not semitones) is what makes the
         // chord's quality follow the root's position in the key.
-        s_voiceFreq[voiceIndex] = scaleDegreeToFreq(rootDegree + patch.voices[voiceIndex].scaleDegree);
+        s_voiceFreq[voiceIndex] = scaleDegreeToFreq(rootDegree + patch.voices[voiceIndex].scaleDegree, patch.scale);
       }
       break;
     }

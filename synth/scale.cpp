@@ -2,17 +2,12 @@
 #include "notes.h"
 #include <math.h>
 
-#if defined(SCALE_MAJOR)
-static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 4, 5, 7, 9, 11};
-#elif defined(SCALE_MINOR)
-static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 8, 10};
-#elif defined(SCALE_MINOR_MELODIC)
-static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 9, 11};
-#elif defined(SCALE_MINOR_HARMONIC)
-static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 8, 11};
-#else
-#error "Define exactly one of SCALE_MAJOR / SCALE_MINOR / SCALE_MINOR_MELODIC in scale.h"
-#endif
+static const int kScaleSemitones[SCALE_MODE_COUNT][SCALE_DEGREES_PER_OCTAVE] = {
+    /* SCALE_MAJOR          */ {0, 2, 4, 5, 7, 9, 11},
+    /* SCALE_MINOR          */ {0, 2, 3, 5, 7, 8, 10},
+    /* SCALE_MINOR_MELODIC  */ {0, 2, 3, 5, 7, 9, 11},
+    /* SCALE_MINOR_HARMONIC */ {0, 2, 3, 5, 7, 8, 11},
+};
 
 // Floor division / modulo, so negative degrees walk down into the octave
 // below instead of folding back on themselves (C's / and % truncate toward
@@ -23,13 +18,13 @@ static int floorDiv(int a, int b) {
   return q;
 }
 
-int scaleDegreeToSemitone(int degree) {
+int scaleDegreeToSemitone(int degree, ScaleMode mode) {
   const int octave = floorDiv(degree, SCALE_DEGREES_PER_OCTAVE);
   const int index = degree - octave * SCALE_DEGREES_PER_OCTAVE;
-  return octave * 12 + kScaleSemitones[index];
+  return octave * 12 + kScaleSemitones[mode][index];
 }
 
-int snapMidiToScaleDegree(float midi) {
+int snapMidiToScaleDegree(float midi, ScaleMode mode) {
   // Search the degree either side of the unsnapped position rather than the
   // whole range: the nearest in-key degree is always within one degree of
   // round(relative semitones * 7/12).
@@ -39,7 +34,7 @@ int snapMidiToScaleDegree(float midi) {
   int best = guess;
   float bestDistance = -1.0f;
   for (int degree = guess - 1; degree <= guess + 1; degree++) {
-    const float distance = fabsf((float)scaleDegreeToSemitone(degree) - relative);
+    const float distance = fabsf((float)scaleDegreeToSemitone(degree, mode) - relative);
     if (bestDistance < 0.0f || distance < bestDistance) {
       bestDistance = distance;
       best = degree;
@@ -48,6 +43,6 @@ int snapMidiToScaleDegree(float midi) {
   return best;
 }
 
-float scaleDegreeToFreq(int degree) {
-  return midiToFreq((float)(SCALE_KEY_ROOT_MIDI + scaleDegreeToSemitone(degree)));
+float scaleDegreeToFreq(int degree, ScaleMode mode) {
+  return midiToFreq((float)(SCALE_KEY_ROOT_MIDI + scaleDegreeToSemitone(degree, mode)));
 }

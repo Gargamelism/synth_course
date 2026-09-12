@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "oscillator.h"  // HarmonicSpread
 #include "distortion.h"  // DistortionType
+#include "scale.h"       // ScaleMode
 
 // The instrument, in one table. Edit kPatches below to change what the
 // synth plays: one row per patch — a voice table (each with its own pitch
@@ -101,21 +102,22 @@ struct Patch
   const VoiceConfig *voices;
   uint8_t voiceCount;
   PitchMode pitchMode;
+  ScaleMode scale;           // key mode for PITCH_DIATONIC; ignored otherwise
   DistortionType distortion; // the "matched distortion" for this type
   const char *label;         // shown on the OLED
 };
 
 static constexpr Patch kPatches[] = {
-    {kVoicesSolo, sizeof(kVoicesSolo) / sizeof(kVoicesSolo[0]), PITCH_DIATONIC, DIST_NONE, "SOLO"},
-    {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, DIST_SOFT_CLIP, "HARM"},
-    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, DIST_HARD_CLIP, "METL"},
-    {kVoicesGuitar, 1, PITCH_DIATONIC, DIST_NONE, "GTR"},
-    {kVoicesPiano, 1, PITCH_DIATONIC, DIST_NONE, "PNO"},
-    {kVoicesClarinet, 1, PITCH_DIATONIC, DIST_NONE, "CLR"},
-    {kVoicesFlute, 1, PITCH_DIATONIC, DIST_NONE, "FLT"},
-    {kVoicesTrumpet, 1, PITCH_DIATONIC, DIST_NONE, "TPT"},
-    {kVoicesTibia, 1, PITCH_DIATONIC, DIST_NONE, "TIB"},
-    {kVoicesHammondTrumpet, 1, PITCH_DIATONIC, DIST_NONE, "HTP"},
+    {kVoicesSolo, sizeof(kVoicesSolo) / sizeof(kVoicesSolo[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "SOLO"},
+    {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HARM"},
+    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_MINOR_HARMONIC, DIST_HARD_CLIP, "METL"},
+    {kVoicesGuitar, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR"},
+    {kVoicesPiano, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "PNO"},
+    {kVoicesClarinet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "CLR"},
+    {kVoicesFlute, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "FLT"},
+    {kVoicesTrumpet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "TPT"},
+    {kVoicesTibia, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "TIB"},
+    {kVoicesHammondTrumpet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "HTP"},
 };
 #define NUM_PATCHES ((int)(sizeof(kPatches) / sizeof(kPatches[0])))
 

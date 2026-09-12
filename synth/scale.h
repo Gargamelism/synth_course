@@ -8,22 +8,27 @@
 //
 // Kept free of Arduino headers so test/run.sh can build it on the host.
 
-// The key, fixed at compile time. Pick exactly ONE mode.
+// The key root, fixed at compile time and shared by every patch.
 #define SCALE_KEY_ROOT_MIDI 40 // E2
-// #define SCALE_MAJOR
-// #define SCALE_MINOR
-// #define SCALE_MINOR_MELODIC
-#define SCALE_MINOR_HARMONIC
+
+// Which mode a patch harmonizes in — set per Patch (voices.h), not here.
+enum ScaleMode {
+  SCALE_MAJOR,
+  SCALE_MINOR,
+  SCALE_MINOR_MELODIC,
+  SCALE_MINOR_HARMONIC,
+  SCALE_MODE_COUNT,
+};
 
 const int SCALE_DEGREES_PER_OCTAVE = 7;
 
-// Semitone offset of `degree` from SCALE_KEY_ROOT_MIDI. Degrees run in both
-// directions and past an octave: 7 -> +12, -1 -> -1 (the B below C4).
-int scaleDegreeToSemitone(int degree);
+// Semitone offset of `degree` from SCALE_KEY_ROOT_MIDI in `mode`. Degrees run
+// in both directions and past an octave: 7 -> +12, -1 -> -1 (the B below C4).
+int scaleDegreeToSemitone(int degree, ScaleMode mode);
 
 // Nearest in-key scale degree to a (possibly fractional) MIDI note — this is
 // what snaps the pitch pot's continuous sweep onto the key.
-int snapMidiToScaleDegree(float midi);
+int snapMidiToScaleDegree(float midi, ScaleMode mode);
 
 // Frequency of a scale degree, in Hz.
-float scaleDegreeToFreq(int degree);
+float scaleDegreeToFreq(int degree, ScaleMode mode);
