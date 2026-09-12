@@ -47,6 +47,21 @@ static void runTests() {
     }
   }
 
+  // Every spread (referenced by a patch or not) yields finite, non-negative
+  // weights, and keeps some energy at every mip level — a level whose
+  // retained harmonics all weigh 0 would divide by zero in buildTable().
+  for (int spread = 0; spread < SPREAD_COUNT; spread++) {
+    for (int h = 0; h < NUM_HARMONICS; h++) {
+      const float w = harmonicWeightTerm(spread, h);
+      CHECK(w >= 0.0f && w <= 1.0f);
+    }
+    for (int level = 0; level < WAVETABLE_MIP_LEVELS; level++) {
+      float sum = 0.0f;
+      for (int h = 0; h < harmonicsForMipLevel(level); h++) sum += harmonicWeightTerm(spread, h);
+      CHECK(sum > 0.0f);
+    }
+  }
+
   // At freq = SAMPLE_RATE_HZ / WAVETABLE_SIZE the phase increment is exactly
   // 2^32 / WAVETABLE_SIZE, so each nextSample() advances the table index by
   // exactly 1 and the oscillator must walk its table in order, then wrap.

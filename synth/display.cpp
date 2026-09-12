@@ -76,7 +76,7 @@ static void drawVoiceRow(uint8_t patchIndex) {
 // currently on (the encoder's click toggles this; "D" means on).
 static void drawSettingsRow(uint8_t patchIndex, bool distortionEnabled) {
   const Patch &patch = kPatches[patchIndex];
-  const int spreadCode = (int)patch.voices[0].spread + 1; // 1-based (natural = 1 .. viola = 5)
+  const int spreadCode = (int)patch.voices[0].spread + 1; // 1-based HarmonicSpread index (harmonic_spreads.h)
   const char *spreadSuffix = patchSpreadsMixed(patch) ? "*" : "";
   s_display.setCursor(OLED_X_OFFSET, rowY(2));
   s_display.printf("%s S%d%s%s", patch.label, spreadCode, spreadSuffix,

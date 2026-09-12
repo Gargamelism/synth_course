@@ -4,7 +4,8 @@
 // toggles that distortion, audio out over I2S to an external DAC, live
 // status on the board's built-in 0.42" OLED.
 // See voices.h for the instrument itself (kPatches), pins.h for wiring,
-// oscillator/audio_task for the DSP + Core-0 audio path, scale for the
+// harmonic_spreads for each spread's overtone weights, oscillator/audio_task
+// for the DSP + Core-0 audio path, scale for the
 // diatonic pitch math, controls for the loop() pot/encoder reading, display
 // for the OLED.
 

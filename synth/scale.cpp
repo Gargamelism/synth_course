@@ -8,6 +8,8 @@ static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 4, 5, 7, 9, 
 static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 8, 10};
 #elif defined(SCALE_MINOR_MELODIC)
 static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 9, 11};
+#elif defined(SCALE_MINOR_HARMONIC)
+static const int kScaleSemitones[SCALE_DEGREES_PER_OCTAVE] = {0, 2, 3, 5, 7, 8, 11};
 #else
 #error "Define exactly one of SCALE_MAJOR / SCALE_MINOR / SCALE_MINOR_MELODIC in scale.h"
 #endif

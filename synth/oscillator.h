@@ -2,20 +2,7 @@
 
 #include <stdint.h>
 #include "pins.h"
-
-// Harmonic spread — the shape of a voice's overtone series. A runtime value,
-// not a build switch: each spread is baked into its own wavetable at startup,
-// so a voice's spread is just which table it reads, and voices are free to
-// use different ones (see voices.h for the per-voice assignment).
-enum HarmonicSpread {
-  SPREAD_NATURAL = 0, // 1/n falloff — a real string/wind instrument
-  SPREAD_OCTAVE,      // octave harmonics only — hollow, organ-like
-  SPREAD_ODD,         // odd harmonics only — square/clarinet-like
-  SPREAD_EQUAL,       // no falloff — dense and buzzy
-  SPREAD_VIOLA,       // 1/n plus a 3rd-6th formant bump, mellow top end
-  SPREAD_BASS_GUITAR,
-  SPREAD_COUNT
-};
+#include "harmonic_spreads.h"  // HarmonicSpread + per-spread weights
 
 // Composite wavetables: one full period of the harmonic sum, precomputed per
 // spread per mip level. A voice costs one lookup per sample instead of

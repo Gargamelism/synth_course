@@ -11,8 +11,9 @@
 // The key, fixed at compile time. Pick exactly ONE mode.
 #define SCALE_KEY_ROOT_MIDI 40 // E2
 // #define SCALE_MAJOR
-#define SCALE_MINOR
+// #define SCALE_MINOR
 // #define SCALE_MINOR_MELODIC
+#define SCALE_MINOR_HARMONIC
 
 const int SCALE_DEGREES_PER_OCTAVE = 7;
 

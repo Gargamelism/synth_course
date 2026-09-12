@@ -49,7 +49,7 @@ static constexpr VoiceConfig kVoicesMetal[] = {
 
 static constexpr VoiceConfig kVoicesSolo[] = {
     // degree, cents, spread,         level
-    {0, 0, SPREAD_BASS_GUITAR, 100},
+    {0, 0, SPREAD_OCTAVES_WITH_ODDS, 100},
     // {7, -7, SPREAD_ODD, 70},
     // {12, 7, SPREAD_VIOLA, 50},
     // {14, 12, SPREAD_VIOLA, 70},
@@ -82,6 +82,16 @@ static constexpr VoiceConfig kVoicesSolo[] = {
     // {43, 12, SPREAD_VIOLA, 3},
 };
 
+// One-voice audition tables for the instrument-model spreads
+// (harmonic_spreads.h); each costs 18 KB of wavetables at boot.
+static constexpr VoiceConfig kVoicesGuitar[] = {{0, 0, SPREAD_GUITAR, 100}};
+static constexpr VoiceConfig kVoicesPiano[] = {{0, 0, SPREAD_PIANO, 100}};
+static constexpr VoiceConfig kVoicesClarinet[] = {{0, 0, SPREAD_CLARINET, 100}};
+static constexpr VoiceConfig kVoicesFlute[] = {{0, 0, SPREAD_FLUTE, 100}};
+static constexpr VoiceConfig kVoicesTrumpet[] = {{0, 0, SPREAD_TRUMPET, 100}};
+static constexpr VoiceConfig kVoicesTibia[] = {{0, 0, SPREAD_HAMMOND_TIBIA, 100}};
+static constexpr VoiceConfig kVoicesHammondTrumpet[] = {{0, 0, SPREAD_HAMMOND_TRUMPET, 100}};
+
 // A "type of audio": a voice table, how it's pitched, and the distortion
 // flavor matched to it. detuneCents is 0 across kVoicesHarmony/kVoicesMetal,
 // so PITCH_UNISON_DETUNE only does something audible when a table sets it —
@@ -99,6 +109,13 @@ static constexpr Patch kPatches[] = {
     {kVoicesSolo, sizeof(kVoicesSolo) / sizeof(kVoicesSolo[0]), PITCH_DIATONIC, DIST_NONE, "SOLO"},
     {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, DIST_SOFT_CLIP, "HARM"},
     {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, DIST_HARD_CLIP, "METL"},
+    {kVoicesGuitar, 1, PITCH_DIATONIC, DIST_NONE, "GTR"},
+    {kVoicesPiano, 1, PITCH_DIATONIC, DIST_NONE, "PNO"},
+    {kVoicesClarinet, 1, PITCH_DIATONIC, DIST_NONE, "CLR"},
+    {kVoicesFlute, 1, PITCH_DIATONIC, DIST_NONE, "FLT"},
+    {kVoicesTrumpet, 1, PITCH_DIATONIC, DIST_NONE, "TPT"},
+    {kVoicesTibia, 1, PITCH_DIATONIC, DIST_NONE, "TIB"},
+    {kVoicesHammondTrumpet, 1, PITCH_DIATONIC, DIST_NONE, "HTP"},
 };
 #define NUM_PATCHES ((int)(sizeof(kPatches) / sizeof(kPatches[0])))
 
