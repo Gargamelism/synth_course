@@ -73,11 +73,12 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 #define PIN_ENCODER_B  2
 #define PIN_ENCODER_SW 4  // wired to S2; S1 -> GND
 
-// This EC11-style encoder's Gray code produces 4 quadrature edges per
-// mechanical detent (00->01->11->10->00 or the reverse) — controls.cpp
-// accumulates edges from quadratureStep() and only advances the patch once
-// every this many, so one click of the knob is one patch step.
-#define ENCODER_STEPS_PER_DETENT 4
+// This EC11-style encoder's detents land every 2 quadrature edges (not the
+// full 4-edge Gray cycle 00->01->11->10->00) — controls.cpp accumulates
+// edges from quadratureStep() and only advances the patch once every this
+// many, so one click of the knob is one patch step. (Was 4, which made the
+// patch advance only every other click.)
+#define ENCODER_STEPS_PER_DETENT 2
 
 // Minimum time between accepted button edges — mechanical switch bounce on
 // a press/release is a few ms, well under this.

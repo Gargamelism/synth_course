@@ -35,7 +35,6 @@ static constexpr VoiceConfig kVoicesHarmony[] = {
     {0, 0, SPREAD_VIOLA, 100},
     {2, 0, SPREAD_ODD, 90},
     {4, 0, SPREAD_VIOLA, 80},
-    {6, 0, SPREAD_VIOLA, 70},
     {7, 0, SPREAD_VIOLA, 60},
     {9, 0, SPREAD_NATURAL, 70},
     {11, 0, SPREAD_ODD, 40},
@@ -44,8 +43,8 @@ static constexpr VoiceConfig kVoicesHarmony[] = {
 
 static constexpr VoiceConfig kVoicesMetal[] = {
     // degree, cents, spread,         level
-    {0, 0, SPREAD_VIOLA, 100},
-    {4, 0, SPREAD_ODD, 100}
+    {0, 0, SPREAD_GUITAR, 100},
+    {4, 0, SPREAD_GUITAR, 80}
 };
 
 static constexpr VoiceConfig kVoicesSolo[] = {
@@ -110,7 +109,7 @@ struct Patch
 static constexpr Patch kPatches[] = {
     {kVoicesSolo, sizeof(kVoicesSolo) / sizeof(kVoicesSolo[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "SOLO"},
     {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HARM"},
-    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_MINOR_HARMONIC, DIST_HARD_CLIP, "METL"},
+    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_HARD_CLIP, "METL"},
     {kVoicesGuitar, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR"},
     {kVoicesPiano, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "PNO"},
     {kVoicesClarinet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "CLR"},

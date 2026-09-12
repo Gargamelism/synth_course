@@ -7,6 +7,8 @@ static const int kScaleSemitones[SCALE_MODE_COUNT][SCALE_DEGREES_PER_OCTAVE] = {
     /* SCALE_MINOR          */ {0, 2, 3, 5, 7, 8, 10},
     /* SCALE_MINOR_MELODIC  */ {0, 2, 3, 5, 7, 9, 11},
     /* SCALE_MINOR_HARMONIC */ {0, 2, 3, 5, 7, 8, 11},
+    /* SCALE_MODE_PHRYGIAN  */ {0, 1, 3, 5, 7, 8, 10},
+    /* SCALE_PENTATONIC_MINOR*/ {0, 3, 5, 7, 10, 12, 15},
 };
 
 // Floor division / modulo, so negative degrees walk down into the octave

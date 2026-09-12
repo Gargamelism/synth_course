@@ -5,7 +5,7 @@
 // A triad is degrees {0, +2, +4} from the root — the same offsets voices.h
 // uses. Quality is never stored: it falls out of where the root sits in the
 // key, so the same three offsets give major on C, minor on D and diminished
-// on B. Semitones are relative to SCALE_KEY_ROOT_MIDI (C4).
+// on B. Semitones are relative to SCALE_KEY_ROOT_MIDI, whatever note that is.
 #define CHECK_TRIAD(rootDegree, s0, s1, s2)                                    \
   do {                                                                         \
     CHECK(scaleDegreeToSemitone((rootDegree) + 0, SCALE_MAJOR) == (s0));       \
@@ -31,23 +31,28 @@ static void runTests() {
   CHECK(scaleDegreeToSemitone(-7, SCALE_MAJOR) == -12);
   CHECK(scaleDegreeToSemitone(-8, SCALE_MAJOR) == -13);
 
-  // Snapping the pot's continuous note onto the key.
-  CHECK(snapMidiToScaleDegree(60.0f, SCALE_MAJOR) == 0);   // C4, the key root
-  CHECK(snapMidiToScaleDegree(62.0f, SCALE_MAJOR) == 1);   // D4
-  CHECK(snapMidiToScaleDegree(60.9f, SCALE_MAJOR) == 0);   // between C and D, nearer C
-  CHECK(snapMidiToScaleDegree(61.4f, SCALE_MAJOR) == 1);   // ... nearer D
-  CHECK(snapMidiToScaleDegree(69.0f, SCALE_MAJOR) == 5);   // A4
-  CHECK(snapMidiToScaleDegree(72.0f, SCALE_MAJOR) == 7);   // C5, an octave up
-  CHECK(snapMidiToScaleDegree(59.0f, SCALE_MAJOR) == -1);  // B3, below the key root
+  // Snapping the pot's continuous note onto the key. All relative to the
+  // key root, so these hold whatever SCALE_KEY_ROOT_MIDI is set to.
+  const float root = (float)SCALE_KEY_ROOT_MIDI;
+  CHECK(snapMidiToScaleDegree(root, SCALE_MAJOR) == 0);        // the key root itself
+  CHECK(snapMidiToScaleDegree(root + 2.0f, SCALE_MAJOR) == 1); // a whole step up
+  CHECK(snapMidiToScaleDegree(root + 0.9f, SCALE_MAJOR) == 0); // between root and +2, nearer root
+  CHECK(snapMidiToScaleDegree(root + 1.4f, SCALE_MAJOR) == 1); // ... nearer +2
+  CHECK(snapMidiToScaleDegree(root + 9.0f, SCALE_MAJOR) == 5); // a 6th up
+  CHECK(snapMidiToScaleDegree(root + 12.0f, SCALE_MAJOR) == 7);// an octave up
+  CHECK(snapMidiToScaleDegree(root - 1.0f, SCALE_MAJOR) == -1); // the leading tone below the key root
 
   // Out-of-key notes snap to the nearest degree in the key; an exact tie
-  // (F#4 sits a semitone from both F4 and G4) resolves downward.
-  CHECK(snapMidiToScaleDegree(66.0f, SCALE_MAJOR) == 3);   // F#4 -> F4
+  // (root+6 sits a semitone from both the 4th and the 5th) resolves downward.
+  CHECK(snapMidiToScaleDegree(root + 6.0f, SCALE_MAJOR) == 3);
 
-  // Degrees resolve to real frequencies (C4 = 261.63 Hz, A4 = 440 Hz).
-  CHECK_NEAR(scaleDegreeToFreq(0, SCALE_MAJOR), 261.626f, 0.01f);
-  CHECK_NEAR(scaleDegreeToFreq(5, SCALE_MAJOR), 440.0f, 0.01f);
-  CHECK_NEAR(scaleDegreeToFreq(7, SCALE_MAJOR), 523.251f, 0.01f);
+  // Degrees resolve to real frequencies, checked against the same
+  // midi<->freq conversion scale.cpp itself builds on (notes.h), so this
+  // pins scaleDegreeToFreq's composition of the root and the semitone table
+  // rather than re-deriving a root-specific constant by hand.
+  CHECK_NEAR(scaleDegreeToFreq(0, SCALE_MAJOR), midiToFreq(root), 0.01f);
+  CHECK_NEAR(scaleDegreeToFreq(5, SCALE_MAJOR), midiToFreq(root + 9.0f), 0.01f);
+  CHECK_NEAR(scaleDegreeToFreq(7, SCALE_MAJOR), midiToFreq(root + 12.0f), 0.01f);
 
   // The pot's own mapping feeds snapMidiToScaleDegree through freqToMidi,
   // so the round trip has to land back on the same note.
