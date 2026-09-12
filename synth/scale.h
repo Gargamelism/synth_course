@@ -19,6 +19,10 @@ enum ScaleMode {
   SCALE_MINOR_HARMONIC,
   SCALE_MODE_PHRYGIAN,
   SCALE_PENTATONIC_MINOR,
+  SCALE_NOT_WORKING,  // PITCH_UNISON_DETUNE patches ignore Patch::scale
+                      // entirely (controls.cpp never calls into scale.h for
+                      // them) — assign this so the table makes that explicit
+                      // instead of naming a mode that has no audible effect.
   SCALE_MODE_COUNT,
 };
 

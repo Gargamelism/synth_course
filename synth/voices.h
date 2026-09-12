@@ -1,9 +1,9 @@
 #pragma once
 
 #include <stdint.h>
-#include "oscillator.h"  // HarmonicSpread
-#include "distortion.h"  // DistortionType
-#include "scale.h"       // ScaleMode
+#include "oscillator.h" // HarmonicSpread
+#include "distortion.h" // DistortionType
+#include "scale.h"      // ScaleMode
 
 // The instrument, in one table. Edit kPatches below to change what the
 // synth plays: one row per patch — a voice table (each with its own pitch
@@ -14,9 +14,10 @@
 // rows) derives from this table.
 
 // How a patch's voices are pitched relative to the pitch pot.
-enum PitchMode {
-  PITCH_DIATONIC,       // scale-degree offsets from the pot's root (scale.h)
-  PITCH_UNISON_DETUNE,  // fixed cents offsets from the pot's root frequency
+enum PitchMode
+{
+  PITCH_DIATONIC,      // scale-degree offsets from the pot's root (scale.h)
+  PITCH_UNISON_DETUNE, // fixed cents offsets from the pot's root frequency
 };
 
 struct VoiceConfig
@@ -33,59 +34,23 @@ struct VoiceConfig
 static constexpr VoiceConfig kVoicesHarmony[] = {
     // degree, cents, spread,         level
     {0, 0, SPREAD_VIOLA, 100},
-    {2, 0, SPREAD_ODD, 90},
-    {4, 0, SPREAD_VIOLA, 80},
-    {7, 0, SPREAD_VIOLA, 60},
-    {9, 0, SPREAD_NATURAL, 70},
-    {11, 0, SPREAD_ODD, 40},
-    {13, 0, SPREAD_VIOLA, 30},
+    {2, 0, SPREAD_ODD, 80},
+    {4, 0, SPREAD_VIOLA, 70},
 };
 
 static constexpr VoiceConfig kVoicesMetal[] = {
     // degree, cents, spread,         level
     {0, 0, SPREAD_GUITAR, 100},
-    {4, 0, SPREAD_GUITAR, 80}
-};
-
-static constexpr VoiceConfig kVoicesSolo[] = {
-    // degree, cents, spread,         level
-    {0, 0, SPREAD_OCTAVES_WITH_ODDS, 100},
-    // {7, -7, SPREAD_ODD, 70},
-    // {12, 7, SPREAD_VIOLA, 50},
-    // {14, 12, SPREAD_VIOLA, 70},
-    // {16, 0, SPREAD_VIOLA, 40},
-    // {18, -7, SPREAD_NATURAL, 16},
-    // {19, 7, SPREAD_ODD, 18}
-    // {20, 12, SPREAD_VIOLA, 3},
-    // {21, -4, SPREAD_VIOLA, 5},
-    // {22, 5, SPREAD_VIOLA, 7},
-    // {23, 0, SPREAD_VIOLA, 2},
-    // {24, -6, SPREAD_VIOLA, 1},
-    // {25, 8, SPREAD_VIOLA, 5},
-    // {26, 12, SPREAD_VIOLA, 3},
-    // {27, -3, SPREAD_VIOLA, 6},
-    // {28, -50, SPREAD_VIOLA, 1},
-    // {29, -15, SPREAD_VIOLA, 16},
-    // {30, 12, SPREAD_VIOLA, 4},
-    // {31, 7, SPREAD_VIOLA, 3},
-    // {32, 3, SPREAD_VIOLA, 2},
-    // {33, 15, SPREAD_VIOLA, 6},
-    // {34, 30, SPREAD_VIOLA, 3},
-    // {35, 50, SPREAD_VIOLA, 1},
-    // {36, 100, SPREAD_VIOLA, 7},
-    // {37, 50, SPREAD_VIOLA, 1},
-    // {38, 0, SPREAD_VIOLA, 2},
-    // {39, -50, SPREAD_VIOLA, 1},
-    // {40, -30, SPREAD_VIOLA, 3},
-    // {41, -20, SPREAD_VIOLA, 4},
-    // {42, -10, SPREAD_VIOLA, 1},
-    // {43, 12, SPREAD_VIOLA, 3},
-};
+    {0, 700, SPREAD_GUITAR, 80}};
 
 // One-voice audition tables for the instrument-model spreads
 // (harmonic_spreads.h); each costs 18 KB of wavetables at boot.
 static constexpr VoiceConfig kVoicesGuitar[] = {{0, 0, SPREAD_GUITAR, 100}};
+static constexpr VoiceConfig kVoicesGuitar2[] = {{0, 0, SPREAD_GUITAR, 100},
+                                                 {-2, 0, SPREAD_GUITAR, 50}};
 static constexpr VoiceConfig kVoicesPiano[] = {{0, 0, SPREAD_PIANO, 100}};
+static constexpr VoiceConfig kVoicesPiano2[] = {{0, 0, SPREAD_PIANO, 100},
+                                               {0, -305, SPREAD_PIANO, 50}};
 static constexpr VoiceConfig kVoicesClarinet[] = {{0, 0, SPREAD_CLARINET, 100}};
 static constexpr VoiceConfig kVoicesFlute[] = {{0, 0, SPREAD_FLUTE, 100}};
 static constexpr VoiceConfig kVoicesTrumpet[] = {{0, 0, SPREAD_TRUMPET, 100}};
@@ -107,16 +72,18 @@ struct Patch
 };
 
 static constexpr Patch kPatches[] = {
-    {kVoicesSolo, sizeof(kVoicesSolo) / sizeof(kVoicesSolo[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "SOLO"},
-    {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HARM"},
-    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_HARD_CLIP, "METL"},
-    {kVoicesGuitar, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR"},
-    {kVoicesPiano, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "PNO"},
-    {kVoicesClarinet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "CLR"},
-    {kVoicesFlute, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "FLT"},
-    {kVoicesTrumpet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "TPT"},
-    {kVoicesTibia, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "TIB"},
-    {kVoicesHammondTrumpet, 1, PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "HTP"},
+    {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_SOFT_CLIP, "HARM"},
+    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_HARD_CLIP, "METL1"},
+    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_FOLDBACK, "METL2"},
+    {kVoicesGuitar, sizeof(kVoicesGuitar) / sizeof(kVoicesGuitar[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR"},
+    {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR2"},
+    {kVoicesPiano, sizeof(kVoicesPiano) / sizeof(kVoicesPiano[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PNO"},
+    {kVoicesPiano2, sizeof(kVoicesPiano2) / sizeof(kVoicesPiano2[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_NONE, "PNO2"},
+    {kVoicesClarinet, sizeof(kVoicesClarinet) / sizeof(kVoicesClarinet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "CLR"},
+    {kVoicesFlute, sizeof(kVoicesFlute) / sizeof(kVoicesFlute[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "FLT"},
+    {kVoicesTrumpet, sizeof(kVoicesTrumpet) / sizeof(kVoicesTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TPT"},
+    {kVoicesTibia, sizeof(kVoicesTibia) / sizeof(kVoicesTibia[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TIB"},
+    {kVoicesHammondTrumpet, sizeof(kVoicesHammondTrumpet) / sizeof(kVoicesHammondTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HTP"},
 };
 #define NUM_PATCHES ((int)(sizeof(kPatches) / sizeof(kPatches[0])))
 
