@@ -51,7 +51,7 @@ private:
   const int16_t *table_ = nullptr;
   uint32_t phase_ = 0;
   uint32_t phaseInc_ = 0;
-  uint8_t spread_ = SPREAD_NATURAL;
+  uint8_t spread_ = SPREAD_SAW;
 };
 
 // Full range of the 32-bit phase accumulator above (2^32), used to convert

@@ -18,10 +18,12 @@
 // Everything is header-only (inline) so oscillator.cpp is still the only
 // translation unit the host tests need to link.
 enum HarmonicSpread {
-  SPREAD_NATURAL = 0, // 1/n falloff — a real string/wind instrument
+  SPREAD_SAW = 0, // 1/n falloff — a real string/wind instrument
   SPREAD_OCTAVE,      // octave harmonics only — hollow, organ-like
-  SPREAD_ODD,         // odd harmonics only — square/clarinet-like
+  SPREAD_SQUARE,         // odd harmonics only — square/clarinet-like
   SPREAD_EQUAL,       // no falloff — dense and buzzy
+  SPREAD_TRIANGLE,    // 1/n^2 falloff — a triangle wave, mellow and bowed
+  SPREAD_PULSATING,      // 
   SPREAD_VIOLA,       // 1/n plus a 3rd-6th formant bump, mellow top end
   SPREAD_OCTAVES_WITH_ODDS,
   // Instrument models — see each weight function for the data and source.
@@ -39,7 +41,7 @@ enum HarmonicSpread {
 
 // The nth harmonic is 1/n as loud as the fundamental — a real string/wind
 // instrument's overtone falloff.
-inline float weightNatural(int h) {
+inline float weightSaw(int h) {
   return 1.0f / (h + 1);
 }
 
@@ -56,9 +58,20 @@ inline float weightOctave(int h) {
 
 // Only odd harmonics (1x, 3x, 5x...) sound, at the natural series' 1/n
 // falloff; even harmonics are silent — a square/clarinet-like spectrum.
-inline float weightOdd(int h) {
+inline float weightSquare(int h) {
   const int n = h + 1;
   return (n % 2 == 1) ? 1.0f / n : 0.0f;
+}
+
+inline float weightTriangle(int h) {
+  const int n = h + 1;
+  return !isPowerOfTwo(n) ? 1.0f / (n * n) : 0.0f;
+}
+
+inline float weightPulsating(int h) {
+  const int n = h + 1;
+  const float width = 0.5f; // 50% duty cycle
+  return fabsf(sinf((float)M_PI * n * width)) / n;
 }
 
 // Every harmonic at equal weight, no falloff — dense and buzzy.
@@ -225,7 +238,7 @@ inline float weightHammondTrumpet(int h) {
 inline float harmonicWeightTerm(int spread, int h) {
   switch (spread) {
     case SPREAD_OCTAVE:            return weightOctave(h);
-    case SPREAD_ODD:               return weightOdd(h);
+    case SPREAD_SQUARE:            return weightSquare(h);
     case SPREAD_EQUAL:             return weightEqual(h);
     case SPREAD_VIOLA:             return weightViola(h);
     case SPREAD_OCTAVES_WITH_ODDS: return weightOctavesWithSomeOdds(h);
@@ -236,7 +249,9 @@ inline float harmonicWeightTerm(int spread, int h) {
     case SPREAD_TRUMPET:           return weightTrumpet(h);
     case SPREAD_HAMMOND_TIBIA:     return weightHammondTibia(h);
     case SPREAD_HAMMOND_TRUMPET:   return weightHammondTrumpet(h);
-    case SPREAD_NATURAL:
-    default:                       return weightNatural(h);
+    case SPREAD_PULSATING:         return weightPulsating(h);
+    case SPREAD_TRIANGLE:          return weightTriangle(h);
+    case SPREAD_SAW:
+    default:                       return weightSaw(h);
   }
 }
