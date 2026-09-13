@@ -97,7 +97,7 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 #define SINE_TABLE_AMPLITUDE 32000
 #define AUDIO_BLOCK_FRAMES 256    // stereo frames generated + written per I2S block
 
-#define NUM_HARMONICS 22  // fundamental (1x) + n overtones (2x..nx), at the
+#define NUM_HARMONICS 64  // fundamental (1x) + n overtones (2x..nx), at the
                           // bottom of the pitch range; the wavetable mip
                           // levels drop harmonics as pitch rises so the
                           // series never crosses Nyquist (see oscillator.h)
