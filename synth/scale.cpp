@@ -2,6 +2,8 @@
 #include "notes.h"
 #include <math.h>
 
+static const int kSemitonesPerOctave = 12;
+
 // One named array per mode, so degreesPerOctave (below) is always derived
 // from the actual data via sizeof — never a hand-typed count that can drift
 // out of sync when a row is edited. SCALE_PENTATONIC_MINOR is genuinely only
@@ -51,7 +53,7 @@ int scaleDegreeToSemitone(int degree, ScaleMode mode) {
   const ScaleDef &def = kScales[mode];
   const int octave = floorDiv(degree, def.degreesPerOctave);
   const int index = degree - octave * def.degreesPerOctave;
-  return octave * 12 + def.semitones[index];
+  return octave * kSemitonesPerOctave + def.semitones[index];
 }
 
 int snapMidiToScaleDegree(float midi, ScaleMode mode) {
@@ -59,7 +61,7 @@ int snapMidiToScaleDegree(float midi, ScaleMode mode) {
   // whole range: the nearest in-key degree is always within one degree of
   // round(relative semitones * 7/12).
   const float relative = midi - (float)SCALE_KEY_ROOT_MIDI;
-  const int guess = (int)lroundf(relative * kScales[mode].degreesPerOctave / 12.0f);
+  const int guess = (int)lroundf(relative * kScales[mode].degreesPerOctave / (float)kSemitonesPerOctave);
 
   int best = guess;
   float bestDistance = -1.0f;
