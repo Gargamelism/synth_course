@@ -71,6 +71,20 @@ static void buildTable(int16_t *table, int spread, int harmonicCount) {
     if (sample < -SINE_TABLE_AMPLITUDE) sample = -SINE_TABLE_AMPLITUDE;
     table[i] = (int16_t)sample;
   }
+
+  // The weight sum above bounds the peak only in the worst case, every
+  // harmonic cresting together, which real harmonic sums never do (1/n
+  // peaks at ~0.48 of it). Rescale to the measured peak so every spread and
+  // level uses the full SINE_TABLE_AMPLITUDE; truncating toward zero keeps
+  // the bound the mixer relies on.
+  int32_t peak = 1;
+  for (int i = 0; i < WAVETABLE_SIZE; i++) {
+    const int32_t magnitude = table[i] < 0 ? -table[i] : table[i];
+    if (magnitude > peak) peak = magnitude;
+  }
+  for (int i = 0; i < WAVETABLE_SIZE; i++) {
+    table[i] = (int16_t)((int32_t)table[i] * SINE_TABLE_AMPLITUDE / peak);
+  }
 }
 
 bool initWavetables() {
