@@ -2,15 +2,41 @@
 #include "notes.h"
 #include <math.h>
 
-static const int kScaleSemitones[SCALE_MODE_COUNT][SCALE_DEGREES_PER_OCTAVE] = {
-    /* SCALE_MAJOR          */ {0, 2, 4, 5, 7, 9, 11},
-    /* SCALE_MINOR          */ {0, 2, 3, 5, 7, 8, 10},
-    /* SCALE_MINOR_MELODIC  */ {0, 2, 3, 5, 7, 9, 11},
-    /* SCALE_MINOR_HARMONIC */ {0, 2, 3, 5, 7, 8, 11},
-    /* SCALE_MODE_PHRYGIAN  */ {0, 1, 3, 5, 7, 8, 10},
-    /* SCALE_PENTATONIC_MINOR*/ {0, 3, 5, 7, 10, 12, 15},
-    /* SCALE_NOT_WORKING    */ {0, 0, 0, 0, 0, 0, 0},  // never read; see scale.h
+// One named array per mode, so degreesPerOctave (below) is always derived
+// from the actual data via sizeof — never a hand-typed count that can drift
+// out of sync when a row is edited. SCALE_PENTATONIC_MINOR is genuinely only
+// 5 notes but pads out to 7 slots by repeating its first two degrees an
+// octave up (12, 15), matching every diatonic mode's width.
+static const int kMajorSemitones[]           = {0, 2, 4, 5, 7, 9, 11};
+static const int kMinorSemitones[]           = {0, 2, 3, 5, 7, 8, 10};
+static const int kMinorMelodicSemitones[]    = {0, 2, 3, 5, 7, 9, 11};
+static const int kMinorHarmonicSemitones[]   = {0, 2, 3, 5, 7, 8, 11};
+static const int kPhrygianSemitones[]        = {0, 1, 3, 5, 7, 8, 10};
+static const int kPentatonicMinorSemitones[] = {0, 3, 5, 7, 10, 12, 15};
+static const int kChromaticSemitones[]       = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+static const int kNotWorkingSemitones[]      = {0};  // never read; see scale.h
+
+struct ScaleDef {
+  const int *semitones;
+  int degreesPerOctave;
 };
+
+#define SCALE_DEF(array) {array, (int)(sizeof(array) / sizeof(array[0]))}
+
+// One row per ScaleMode, in enum order — a row count mismatch is a compile
+// error below rather than a silently zero-filled mode.
+static const ScaleDef kScales[SCALE_MODE_COUNT] = {
+    SCALE_DEF(kMajorSemitones),           // SCALE_MAJOR
+    SCALE_DEF(kMinorSemitones),           // SCALE_MINOR
+    SCALE_DEF(kMinorMelodicSemitones),    // SCALE_MINOR_MELODIC
+    SCALE_DEF(kMinorHarmonicSemitones),   // SCALE_MINOR_HARMONIC
+    SCALE_DEF(kPhrygianSemitones),        // SCALE_MODE_PHRYGIAN
+    SCALE_DEF(kPentatonicMinorSemitones), // SCALE_PENTATONIC_MINOR
+    SCALE_DEF(kChromaticSemitones),       // SCALE_CHROMATIC
+    SCALE_DEF(kNotWorkingSemitones),      // SCALE_NOT_WORKING
+};
+static_assert(sizeof(kScales) / sizeof(kScales[0]) == SCALE_MODE_COUNT,
+              "kScales must have exactly one row per ScaleMode, in enum order");
 
 // Floor division / modulo, so negative degrees walk down into the octave
 // below instead of folding back on themselves (C's / and % truncate toward
@@ -22,9 +48,10 @@ static int floorDiv(int a, int b) {
 }
 
 int scaleDegreeToSemitone(int degree, ScaleMode mode) {
-  const int octave = floorDiv(degree, SCALE_DEGREES_PER_OCTAVE);
-  const int index = degree - octave * SCALE_DEGREES_PER_OCTAVE;
-  return octave * 12 + kScaleSemitones[mode][index];
+  const ScaleDef &def = kScales[mode];
+  const int octave = floorDiv(degree, def.degreesPerOctave);
+  const int index = degree - octave * def.degreesPerOctave;
+  return octave * 12 + def.semitones[index];
 }
 
 int snapMidiToScaleDegree(float midi, ScaleMode mode) {
@@ -32,7 +59,7 @@ int snapMidiToScaleDegree(float midi, ScaleMode mode) {
   // whole range: the nearest in-key degree is always within one degree of
   // round(relative semitones * 7/12).
   const float relative = midi - (float)SCALE_KEY_ROOT_MIDI;
-  const int guess = (int)lroundf(relative * SCALE_DEGREES_PER_OCTAVE / 12.0f);
+  const int guess = (int)lroundf(relative * kScales[mode].degreesPerOctave / 12.0f);
 
   int best = guess;
   float bestDistance = -1.0f;

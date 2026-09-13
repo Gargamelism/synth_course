@@ -41,16 +41,20 @@ static constexpr VoiceConfig kVoicesHarmony[] = {
 static constexpr VoiceConfig kVoicesMetal[] = {
     // degree, cents, spread,         level
     {0, 0, SPREAD_GUITAR, 100},
-    {0, 700, SPREAD_GUITAR, 80}};
+    // scaleDegree 7 == detuneCents 700 (a fifth) once read as chromatic
+    // degrees (METL3, below); PITCH_UNISON_DETUNE (METL1/METL2) ignores
+    // scaleDegree entirely, so this doesn't change their sound.
+    {7, 700, SPREAD_GUITAR, 80}};
 
 // One-voice audition tables for the instrument-model spreads
 // (harmonic_spreads.h); each costs 18 KB of wavetables at boot.
 static constexpr VoiceConfig kVoicesGuitar[] = {{0, 0, SPREAD_GUITAR, 100}};
 static constexpr VoiceConfig kVoicesGuitar2[] = {{0, 0, SPREAD_GUITAR, 100},
-                                                 {-2, 0, SPREAD_GUITAR, 50}};
+                                                 {-2, 0, SPREAD_GUITAR, 30}};
 static constexpr VoiceConfig kVoicesPiano[] = {{0, 0, SPREAD_PIANO, 100}};
 static constexpr VoiceConfig kVoicesPiano2[] = {{0, 0, SPREAD_PIANO, 100},
-                                               {0, -305, SPREAD_PIANO, 50}};
+                                               {-5, 0, SPREAD_PIANO, 30}
+                                              };
 static constexpr VoiceConfig kVoicesClarinet[] = {{0, 0, SPREAD_CLARINET, 100}};
 static constexpr VoiceConfig kVoicesFlute[] = {{0, 0, SPREAD_FLUTE, 100}};
 static constexpr VoiceConfig kVoicesTrumpet[] = {{0, 0, SPREAD_TRUMPET, 100}};
@@ -75,10 +79,11 @@ static constexpr Patch kPatches[] = {
     {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_SOFT_CLIP, "HARM"},
     {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_HARD_CLIP, "METL1"},
     {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_FOLDBACK, "METL2"},
+    {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_CHROMATIC, DIST_SOFT_CLIP, "METL3"},
     {kVoicesGuitar, sizeof(kVoicesGuitar) / sizeof(kVoicesGuitar[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR"},
     {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR2"},
     {kVoicesPiano, sizeof(kVoicesPiano) / sizeof(kVoicesPiano[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PNO"},
-    {kVoicesPiano2, sizeof(kVoicesPiano2) / sizeof(kVoicesPiano2[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_NONE, "PNO2"},
+    {kVoicesPiano2, sizeof(kVoicesPiano2) / sizeof(kVoicesPiano2[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_NONE, "PNO2"},
     {kVoicesClarinet, sizeof(kVoicesClarinet) / sizeof(kVoicesClarinet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "CLR"},
     {kVoicesFlute, sizeof(kVoicesFlute) / sizeof(kVoicesFlute[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "FLT"},
     {kVoicesTrumpet, sizeof(kVoicesTrumpet) / sizeof(kVoicesTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TPT"},

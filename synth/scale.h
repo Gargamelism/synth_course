@@ -19,6 +19,7 @@ enum ScaleMode {
   SCALE_MINOR_HARMONIC,
   SCALE_MODE_PHRYGIAN,
   SCALE_PENTATONIC_MINOR,
+  SCALE_CHROMATIC,    // all 12 semitones, evenly spaced (degree == semitone)
   SCALE_NOT_WORKING,  // PITCH_UNISON_DETUNE patches ignore Patch::scale
                       // entirely (controls.cpp never calls into scale.h for
                       // them) — assign this so the table makes that explicit
@@ -26,7 +27,8 @@ enum ScaleMode {
   SCALE_MODE_COUNT,
 };
 
-const int SCALE_DEGREES_PER_OCTAVE = 7;
+// Degrees per octave vary by mode (7 for the diatonic/pentatonic modes, 12
+// for SCALE_CHROMATIC) — looked up internally in scale.cpp.
 
 // Semitone offset of `degree` from SCALE_KEY_ROOT_MIDI in `mode`. Degrees run
 // in both directions and past an octave: 7 -> +12, -1 -> -1 (the B below C4).
