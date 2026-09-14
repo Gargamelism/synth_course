@@ -18,7 +18,8 @@
 // Everything is header-only (inline) so oscillator.cpp is still the only
 // translation unit the host tests need to link.
 enum HarmonicSpread {
-  SPREAD_SAW = 0, // 1/n falloff — a real string/wind instrument
+  SPREAD_SINE = 0, // a single sine wave, no overtones
+  SPREAD_SAW,       // 1/n falloff — a real string/wind instrument
   SPREAD_OCTAVE,      // octave harmonics only — hollow, organ-like
   SPREAD_SQUARE,         // odd harmonics only — square/clarinet-like
   SPREAD_EQUAL,       // no falloff — dense and buzzy
@@ -38,6 +39,10 @@ enum HarmonicSpread {
 };
 
 // --- Synthetic spreads -----------------------------------------------------
+
+inline float weightSine(int h) {
+  return h == 0 ? 1.0f : 0.0f;
+}
 
 // The nth harmonic is 1/n as loud as the fundamental — a real string/wind
 // instrument's overtone falloff.
@@ -237,6 +242,7 @@ inline float weightHammondTrumpet(int h) {
 
 inline float harmonicWeightTerm(int spread, int h) {
   switch (spread) {
+    case SPREAD_SINE:              return weightSine(h);
     case SPREAD_OCTAVE:            return weightOctave(h);
     case SPREAD_SQUARE:            return weightSquare(h);
     case SPREAD_EQUAL:             return weightEqual(h);

@@ -37,7 +37,7 @@ upload before starting Phase 1. Everything in Phases 1–5 needs **no** heap; Ph
 needs ~10 KB, and the optional forte/piano table pairs in Phase 2 would double wavetable RAM
 and do **not** fit. So Phase 0 trims the pyramid first.
 
-### Phase 0 — allocate only the mip levels a spread can reach (saves ~100 KB)
+### Phase 0 — allocate only the mip levels a spread can reach (saves ~100 KB) ✅ implemented (commit 540a998)
 
 `initWavetables()` (`oscillator.cpp`) builds all 9 levels (80 Hz → Nyquist) for every spread
 any patch references. But the pitch pot tops out at `FREQ_MAX_HZ` = 1000 Hz, and a voice only
@@ -217,7 +217,7 @@ Freeverb-style: 4 combs (1116, 1188, 1277, 1356 samples at 44.1 kHz) + 2 all-pas
 
 ## Suggested order and what each buys
 
-0 (RAM trim + budget test) → 1 (note-on + ADSR) → 2 (brightness filter) → 3 (detune +
+0 ✅ (RAM trim + budget test) → 1 (note-on + ADSR) → 2 (brightness filter) → 3 (detune +
 vibrato) → 4 (Hz formants) → 5 (noise) → 6 (phases) → 7 (reverb). After 1 and 2 the guitar
 and piano patches stop being organ stops; 3 makes the piano a piano and the winds sound
 played; 4–7 are polish.

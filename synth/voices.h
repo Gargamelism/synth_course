@@ -99,6 +99,17 @@ static constexpr VoiceConfig kVoicesPulse[] = {
     {0, 455, SPREAD_TRIANGLE, 50},
 };
 
+static constexpr VoiceConfig kVoicesCleanSine[] = {
+    {0, 0, SPREAD_SINE, 100},
+};
+
+static constexpr VoiceConfig kVoicesCleanSines[] = {
+    {0, 0, SPREAD_SINE, 100},
+    {2, 0, SPREAD_SINE, 80},
+    {4, 0, SPREAD_SINE, 30},
+    {6, 0, SPREAD_SINE, 50},
+};
+
 // A "type of audio": a voice table, how it's pitched, and the distortion
 // flavor matched to it. detuneCents is 0 across kVoicesHarmony/kVoicesMetal,
 // so PITCH_UNISON_DETUNE only does something audible when a table sets it —
@@ -133,6 +144,8 @@ static constexpr Patch kPatches[] = {
     {kVoicesHammondTrumpet2, sizeof(kVoicesHammondTrumpet2) / sizeof(kVoicesHammondTrumpet2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HTP2"},
     {kVoicesHarsh, sizeof(kVoicesHarsh) / sizeof(kVoicesHarsh[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "HARS"},
     {kVoicesPulse, sizeof(kVoicesPulse) / sizeof(kVoicesPulse[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PULS"},
+    {kVoicesCleanSine, sizeof(kVoicesCleanSine) / sizeof(kVoicesCleanSine[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE"},
+    {kVoicesCleanSines, sizeof(kVoicesCleanSines) / sizeof(kVoicesCleanSines[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE2"},
 };
 #define NUM_PATCHES ((int)(sizeof(kPatches) / sizeof(kPatches[0])))
 
