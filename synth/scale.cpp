@@ -2,8 +2,6 @@
 #include "notes.h"
 #include <math.h>
 
-static const int kSemitonesPerOctave = 12;
-
 // One named array per mode, so degreesPerOctave (below) is always derived
 // from the actual data via sizeof — never a hand-typed count that can drift
 // out of sync when a row is edited. SCALE_PENTATONIC_MINOR is genuinely only

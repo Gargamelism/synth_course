@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 #include "pins.h"
 #include "harmonic_spreads.h"  // HarmonicSpread + per-spread weights
@@ -35,6 +36,18 @@ int mipLevelForFreq(float freqHz);
 
 // How many harmonics level `level` keeps. Exposed for the band-limiting test.
 int harmonicsForMipLevel(int level);
+
+// Highest mip level worth building for `spread`: the top of the range any
+// kPatches voice using it can be pitched into (FREQ_MAX_HZ plus that voice's
+// scale-degree/cents offset, plus vibrato/snap margin). initWavetables()
+// only builds up to this per spread; exposed so test_oscillator.cpp can
+// recompute the same total and check it against WAVETABLE_RAM_BUDGET_BYTES.
+int maxMipLevelForSpread(int spread);
+
+// Total bytes currently held by g_wavetable's non-null entries — what
+// initWavetables() actually allocated. setup() prints this next to free
+// heap; test_oscillator.cpp checks it against WAVETABLE_RAM_BUDGET_BYTES.
+size_t wavetableBytesAllocated();
 
 // Phase-accumulator (DDS) wavetable oscillator, one instance per voice.
 class Oscillator {

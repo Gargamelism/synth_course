@@ -28,6 +28,9 @@ void setup() {
   if (!initWavetables()) {
     Serial.println("wavetable allocation failed - voices using an unbuilt spread will be silent");
   }
+  Serial.printf("wavetables: %u bytes (budget %u), free heap %u bytes\n",
+                (unsigned)wavetableBytesAllocated(), (unsigned)WAVETABLE_RAM_BUDGET_BYTES,
+                (unsigned)ESP.getFreeHeap());
   controlsBegin();
   pinMode(PIN_STATUS_LED, OUTPUT);
 

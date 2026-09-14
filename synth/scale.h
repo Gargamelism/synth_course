@@ -11,6 +11,13 @@
 // The key root, fixed at compile time and shared by every patch.
 #define SCALE_KEY_ROOT_MIDI 40 // E2
 
+// A semitone is 1/12 of an octave; a cent is 1/100 of a semitone. Shared so
+// every caller converting a semitone or cents offset into a frequency ratio
+// (scale.cpp, oscillator.cpp's mip-level sizing, controls.cpp's unison
+// detune) uses the same definition instead of retyping 12 or 1200.
+const int kSemitonesPerOctave = 12;
+const int kCentsPerOctave = kSemitonesPerOctave * 100;
+
 // Which mode a patch harmonizes in — set per Patch (voices.h), not here.
 enum ScaleMode {
   SCALE_MAJOR,

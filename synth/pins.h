@@ -102,6 +102,11 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
                           // levels drop harmonics as pitch rises so the
                           // series never crosses Nyquist (see oscillator.h)
 
+// Hard ceiling on total wavetable RAM (see oscillator.cpp:initWavetables()).
+// Making this an explicit invariant means a kPatches edit that needs more
+// headroom fails test_oscillator.cpp, not the board.
+const int WAVETABLE_RAM_BUDGET_BYTES = 128 * 1024;
+
 // Per-voice volume is carried into the mixer as a Q15 fixed-point fraction
 // (0 .. VOLUME_Q15_ONE == 0.0 .. 1.0) so the per-sample mix stays integer-only
 // — the ESP32-C3 core has no hardware FPU, so a per-sample float multiply is a

@@ -4,12 +4,16 @@
 
 // Expected harmonic count per mip level: level L covers [80 * 2^L, 80 *
 // 2^(L+1)) Hz and keeps only the harmonics that stay under Nyquist at the
-// TOP of that range, capped at NUM_HARMONICS (22).
-static const int kExpectedHarmonics[WAVETABLE_MIP_LEVELS] = {22, 22, 22, 17, 8, 4, 2, 1, 1};
+// TOP of that range, capped at NUM_HARMONICS (64).
+static const int kExpectedHarmonics[WAVETABLE_MIP_LEVELS] = {64, 64, 34, 17, 8, 4, 2, 1, 1};
 
 static void runTests() {
   initSineTable();
   CHECK(initWavetables());
+
+  // Phase 0: only the mip levels a patch can actually reach get built.
+  // Adding a patch that needs more headroom must fail here, not on the board.
+  CHECK(wavetableBytesAllocated() <= (size_t)WAVETABLE_RAM_BUDGET_BYTES);
 
   // Sine table at the four quadrant boundaries.
   CHECK_NEAR(g_sineTable[0], 0, 5);

@@ -128,7 +128,7 @@ static void updateVoiceFreqs(float pitchNorm, uint8_t patchIndex) {
     // detuneCents), so they're rebuilt here rather than once at startup.
     if (patch.pitchMode == PITCH_UNISON_DETUNE) {
       for (int voiceIndex = 0; voiceIndex < patch.voiceCount; voiceIndex++) {
-        s_detuneRatio[voiceIndex] = powf(2.0f, patch.voices[voiceIndex].detuneCents / 1200.0f);
+        s_detuneRatio[voiceIndex] = powf(2.0f, patch.voices[voiceIndex].detuneCents / (float)kCentsPerOctave);
       }
     }
     s_lastPatchIndexForFreq = (int)patchIndex;

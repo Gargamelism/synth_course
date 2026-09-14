@@ -43,6 +43,42 @@ int mipLevelForFreq(float freqHz) {
   return level;
 }
 
+// Margin added on top of a voice's worst-case offset in maxMipLevelForSpread()
+// below, so the root pot's snap-to-scale-degree and Phase 3's future vibrato
+// never reach past the mip level actually built.
+static const float kDiatonicMarginSemitones = 1.5f;
+static const float kDetuneMarginCents = 150.0f;
+
+int maxMipLevelForSpread(int spread) {
+  float maxHz = 0.0f;
+  for (int p = 0; p < NUM_PATCHES; p++) {
+    const Patch &patch = kPatches[p];
+    for (int v = 0; v < patch.voiceCount; v++) {
+      const VoiceConfig &voice = patch.voices[v];
+      if (voice.spread != spread) continue;
+      float hz;
+      if (patch.pitchMode == PITCH_DIATONIC) {
+        const int semitones = scaleDegreeToSemitone(voice.scaleDegree, patch.scale);
+        hz = FREQ_MAX_HZ * powf(2.0f, (semitones + kDiatonicMarginSemitones) / kSemitonesPerOctave);
+      } else {
+        hz = FREQ_MAX_HZ * powf(2.0f, (voice.detuneCents + kDetuneMarginCents) / kCentsPerOctave);
+      }
+      if (hz > maxHz) maxHz = hz;
+    }
+  }
+  return maxHz > 0.0f ? mipLevelForFreq(maxHz) : 0;
+}
+
+size_t wavetableBytesAllocated() {
+  size_t bytes = 0;
+  for (int spread = 0; spread < SPREAD_COUNT; spread++) {
+    for (int level = 0; level < WAVETABLE_MIP_LEVELS; level++) {
+      if (g_wavetable[spread][level] != nullptr) bytes += WAVETABLE_SIZE * sizeof(int16_t);
+    }
+  }
+  return bytes;
+}
+
 static void buildTable(int16_t *table, int spread, int harmonicCount) {
   // Sum the terms first, then scale so they total VOLUME_Q15_ONE — that
   // bounds the composite's worst-case (all harmonics in phase) peak to
@@ -99,10 +135,17 @@ bool initWavetables() {
     }
   }
 
+  // Only build as high into the mip pyramid as some voice can actually reach
+  // — most spreads never need the top few (unreachable) octaves.
+  int maxLevel[SPREAD_COUNT] = {};
+  for (int spread = 0; spread < SPREAD_COUNT; spread++) {
+    if (spreadUsed[spread]) maxLevel[spread] = maxMipLevelForSpread(spread);
+  }
+
   bool ok = true;
   for (int spread = 0; spread < SPREAD_COUNT; spread++) {
     if (!spreadUsed[spread]) continue; // unused spreads cost no RAM
-    for (int level = 0; level < WAVETABLE_MIP_LEVELS; level++) {
+    for (int level = 0; level <= maxLevel[spread]; level++) {
       if (g_wavetable[spread][level] != nullptr) continue;
       int16_t *table = (int16_t *)malloc(WAVETABLE_SIZE * sizeof(int16_t));
       if (table == nullptr) {
