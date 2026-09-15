@@ -52,6 +52,15 @@ static int32_t s_detentAccum = 0;
 static bool s_lastSwPressed = false;
 static uint32_t s_lastSwToggleMs = 0;
 
+// Envelope trigger tracking. Deliberately primed to `false` regardless of
+// PIN_AUDIO_SWITCH's actual boot-time state — if it's already closed at
+// power-on, this makes the first controlsUpdate() see a rising edge, so the
+// instrument doesn't stay silent until the switch is cycled. (Contrast with
+// s_lastSwPressed above, which primes to the current state on purpose, to
+// avoid a spurious toggle of an unrelated setting at boot.)
+static bool s_lastNoteHeld = false;
+static uint8_t s_noteOnCount = 0;
+
 static int readOversampled(int pin) {
   long sum = 0;
   for (int sampleIndex = 0; sampleIndex < ADC_OVERSAMPLE_COUNT; sampleIndex++) {
@@ -142,6 +151,11 @@ static void updateVoiceFreqs(float pitchNorm, uint8_t patchIndex) {
       if (rootDegree == s_lastRootDegree) {
         return;
       }
+      // A genuine new root re-plucks the note; the sentinel-to-real-value
+      // jump at boot or right after a patch switch (below) does not.
+      if (s_lastRootDegree != INT32_MIN) {
+        s_noteOnCount++;
+      }
       s_lastRootDegree = rootDegree;
       s_rootHz = scaleDegreeToFreq(rootDegree, patch.scale);
       for (int voiceIndex = 0; voiceIndex < patch.voiceCount; voiceIndex++) {
@@ -199,7 +213,8 @@ void controlsBegin() {
   }
   g_oscParams.rootHz = FREQ_MIN_HZ;
   g_oscParams.volume = 0.0f;
-  g_oscParams.audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
+  g_oscParams.noteHeld = false;
+  g_oscParams.noteOnCount = 0;
   g_oscParams.patchIndex = s_patchIndex;
   g_oscParams.distortionEnabled = s_distortionEnabled;
   xSemaphoreGive(g_paramsMutex);
@@ -220,7 +235,11 @@ void controlsUpdate() {
   updateEncoderButton();
   updateVoiceFreqs(pitchNorm, s_patchIndex);
 
-  bool audioOn = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
+  bool noteHeld = (digitalRead(PIN_AUDIO_SWITCH) == LOW);
+  if (noteHeld && !s_lastNoteHeld) {
+    s_noteOnCount++;
+  }
+  s_lastNoteHeld = noteHeld;
 
   if (xSemaphoreTake(g_paramsMutex, pdMS_TO_TICKS(5)) == pdTRUE) {
     // Everything published together in one lock/unlock: patchIndex and
@@ -232,7 +251,8 @@ void controlsUpdate() {
     }
     g_oscParams.rootHz = s_rootHz;
     g_oscParams.volume = volume;
-    g_oscParams.audioOn = audioOn;
+    g_oscParams.noteHeld = noteHeld;
+    g_oscParams.noteOnCount = s_noteOnCount;
     g_oscParams.patchIndex = s_patchIndex;
     g_oscParams.distortionEnabled = s_distortionEnabled;
     xSemaphoreGive(g_paramsMutex);

@@ -15,7 +15,14 @@ struct OscParams {
                             // meaningful; derived from the pitch pot
   float rootHz;             // the pitch pot's root note, what the display shows
   float volume;             // master, 0.0 - 1.0 — scales every voice
-  bool audioOn;             // PIN_AUDIO_SWITCH state — false mutes everything
+  bool noteHeld;            // PIN_AUDIO_SWITCH state — true while held closed;
+                            // the amplitude envelope's note-on/note-off gate
+                            // (envelope.h), not a hard mute
+  uint8_t noteOnCount;      // increments on every envelope trigger (noteHeld
+                            // going true, or a new diatonic root) — a
+                            // counter, not an edge flag, so audioTask()
+                            // (which only reads this once per ~5.8ms block)
+                            // never misses one
   uint8_t patchIndex;       // index into kPatches (voices.h) — the encoder's
                             // rotation target; voice count/pitch mode/
                             // matched distortion all derive from this
@@ -27,7 +34,7 @@ extern OscParams g_oscParams;
 extern SemaphoreHandle_t g_paramsMutex;
 
 void controlsBegin();
-// Reads the master volume pot, the pitch pot, the audio on/off switch, and
+// Reads the master volume pot, the pitch pot, the envelope gate switch, and
 // the encoder (rotation + button), smooths the pots, derives every voice's
 // frequency from the active patch (kPatches, voices.h), and updates
 // g_oscParams under the mutex. Call from loop().
