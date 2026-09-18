@@ -96,11 +96,17 @@ static void audioTask(void *arg) {
       voiceCount = liveVoiceCount;
 
       // noteHeld going true (or a new diatonic root, controls.cpp) is a
-      // note-on; noteHeld going false is a note-off. Both drive the shared
-      // envelope rather than muting the mix directly (see below).
+      // note-on candidate; noteHeld going false is a note-off. A pot sweep
+      // still counts as a candidate while the switch is open (so the
+      // envelope starts fresh from wherever the pot lands once the switch
+      // does close), but only actually sounds — calls noteOn() — while
+      // noteHeld is true: otherwise sweeping the pot would play notes with
+      // the switch off.
       if (noteOnCount != lastNoteOnCount) {
-        s_ampEnvelope.noteOn();
         lastNoteOnCount = noteOnCount;
+        if (noteHeld) {
+          s_ampEnvelope.noteOn();
+        }
       }
       if (!noteHeld && lastNoteHeld) {
         s_ampEnvelope.noteOff();

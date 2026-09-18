@@ -18,11 +18,14 @@ struct OscParams {
   bool noteHeld;            // PIN_AUDIO_SWITCH state — true while held closed;
                             // the amplitude envelope's note-on/note-off gate
                             // (envelope.h), not a hard mute
-  uint8_t noteOnCount;      // increments on every envelope trigger (noteHeld
-                            // going true, or a new diatonic root) — a
-                            // counter, not an edge flag, so audioTask()
-                            // (which only reads this once per ~5.8ms block)
-                            // never misses one
+  uint8_t noteOnCount;      // increments on every note-on CANDIDATE (noteHeld
+                            // going true, or a new diatonic root — the
+                            // latter even while noteHeld is false, so a pot
+                            // sweep is captured but audioTask() only calls
+                            // Envelope::noteOn() for it while noteHeld is
+                            // actually true). A counter, not an edge flag,
+                            // so audioTask() (which only reads this once per
+                            // ~5.8ms block) never misses one.
   uint8_t patchIndex;       // index into kPatches (voices.h) — the encoder's
                             // rotation target; voice count/pitch mode/
                             // matched distortion all derive from this
