@@ -17,7 +17,7 @@
 #include <ESP_I2S.h>
 #include "clip.h"
 
-#define PIN_I2S_BCK  20
+#define PIN_I2S_BCK  4
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10
 #define PIN_POT_VOL1 0

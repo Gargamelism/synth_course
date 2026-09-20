@@ -17,7 +17,7 @@ See `pins.h` for wiring/pin assignments.
 - [Arduino IDE](https://www.arduino.cc/en/software) 2.x (or `arduino-cli`)
 - **ESP32 board support**: install via Boards Manager → search "esp32" → install the Espressif "esp32" package (this project uses the Arduino-ESP32 core v3.x, which provides `ESP_I2S.h`)
 - **Board selection**: pick "ESP32C3 Dev Module" (FQBN `esp32:esp32:esp32c3`) under Tools → Board
-- **Tools settings**: set **USB CDC On Boot → "Enabled"**. This board wires GPIO20/21 as UART0, and the firmware puts the I2S bit-clock on GPIO20 — so the serial console must move to native USB or boot diagnostics are lost
+- **Tools settings**: set **USB CDC On Boot → "Enabled"**. This board wires GPIO20/21 as UART0, and the firmware puts the encoder switch on GPIO20 and the audio gate switch on GPIO21 — so the serial console must move to native USB or boot diagnostics are lost
 - **Libraries** (install via Library Manager):
   - `Adafruit SSD1306`
   - `Adafruit GFX Library`

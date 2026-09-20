@@ -11,10 +11,12 @@
 // IDE (which this project requires: it routes the serial console over native
 // USB and frees GPIO20/21 for other use).
 
-// I2S audio out (MAX98357A Class-D amp breakout). BCK sits on GPIO20 — a
-// UART0 pin, free here only because USB CDC On Boot moves the console to
-// native USB. Its usual home, GPIO6, is the OLED's SCL on this board.
-#define PIN_I2S_BCK  20
+// I2S audio out (MAX98357A Class-D amp breakout). All three lines sit on the
+// amp side of the QFN32 package (GPIO3-10), on the highest-numbered pins
+// available there once the fixed/reserved ones (OLED on 5/6, onboard LED on
+// 8, BOOT button on 9) are excluded — keeps the amp wiring physically
+// clustered instead of crossing to the far side of the chip.
+#define PIN_I2S_BCK  4
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10
 
@@ -54,9 +56,8 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 // Amplitude envelope gate switch — SPST, wired between this pin and GND,
 // read with the internal pull-up (INPUT_PULLUP): open = HIGH = note off,
 // closed = LOW = note held (envelope.h triggers attack on close, release on
-// open — see controls.cpp/audio_task.cpp). GPIO21 is UART0 TX, free here for
-// the same reason GPIO20 is free for I2S BCK — "USB CDC On Boot" moves the
-// console off UART0.
+// open — see controls.cpp/audio_task.cpp). GPIO21 is UART0 TX, free here
+// because "USB CDC On Boot" moves the console off UART0.
 #define PIN_AUDIO_SWITCH 21
 
 // Rotary encoder (bare EC11-style, 5 pins: A/B/C + isolated switch S1/S2).
@@ -72,7 +73,9 @@ const int OLED_VOL_BAR_X_PX       = 32; // volume bar's left edge, from the wind
 // (of the 2) are both ground — those are C and S1.
 #define PIN_ENCODER_A  1
 #define PIN_ENCODER_B  2
-#define PIN_ENCODER_SW 4  // wired to S2; S1 -> GND
+// Wired to S2 (S1 -> GND). Lives on GPIO20 (freed up by moving PIN_I2S_BCK
+// off it), on the non-amp side with the other controls, not the amp side.
+#define PIN_ENCODER_SW 20
 
 // This EC11-style encoder's detents land every 2 quadrature edges (not the
 // full 4-edge Gray cycle 00->01->11->10->00) — controls.cpp accumulates
