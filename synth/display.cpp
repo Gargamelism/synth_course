@@ -1,4 +1,7 @@
 #include "display.h"
+
+#ifndef DISABLE_DISPLAY
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -114,3 +117,5 @@ void displayUpdate() {
 
   s_display.display();
 }
+
+#endif // DISABLE_DISPLAY
