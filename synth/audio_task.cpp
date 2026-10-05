@@ -6,6 +6,7 @@
 #include "controls.h"
 #include "distortion.h"
 #include "envelope.h"
+#include "tone.h"
 
 static I2SClass s_i2s;
 static Oscillator s_osc[MAX_VOICES];
@@ -17,6 +18,10 @@ static int16_t s_voiceLevelQ15[MAX_VOICES];
 // trigger together (see voices.h: Patch::amp), so they share one gain
 // applied to the mixed sample rather than each voice tracking its own.
 static Envelope s_ampEnvelope;
+// Phase 2 brightness: a second envelope, triggered alongside s_ampEnvelope,
+// sweeps the cutoff of one low-pass on the mixed signal (see tone.h).
+static Envelope s_filterEnvelope;
+static OnePoleLowpass s_toneFilter;
 
 // Extra fractional bits carried by the per-sample gain ramp in audioTask():
 // a block-to-block Q15 gain change smaller than AUDIO_BLOCK_FRAMES would
@@ -92,6 +97,7 @@ static void audioTask(void *arg) {
         // whatever gain the envelope is currently at (see voices.h's
         // Patch::amp comment / the Phase 1 plan's design decisions).
         s_ampEnvelope.configure(kPatches[patchIndex].amp);
+        s_filterEnvelope.configure(kPatches[patchIndex].tone.filter);
       }
       voiceCount = liveVoiceCount;
 
@@ -106,13 +112,19 @@ static void audioTask(void *arg) {
         lastNoteOnCount = noteOnCount;
         if (noteHeld) {
           s_ampEnvelope.noteOn();
+          s_filterEnvelope.noteOn();
         }
       }
       if (!noteHeld && lastNoteHeld) {
         s_ampEnvelope.noteOff();
+        s_filterEnvelope.noteOff();
       }
       lastNoteHeld = noteHeld;
       targetGainQ15 = s_ampEnvelope.nextBlockGainQ15(AUDIO_BLOCK_FRAMES);
+      const float filterEnvGain =
+          s_filterEnvelope.nextBlockGainQ15(AUDIO_BLOCK_FRAMES) / (float)VOLUME_Q15_ONE;
+      s_toneFilter.setCoefficientQ16(
+          toneCoefficientQ16(toneCutoffHz(kPatches[patchIndex].tone, filterEnvGain, volume)));
 
       // Convert the master volume to Q15 once per block (not per sample) so
       // the only float math left is off the per-sample hot path. Muting is
@@ -158,6 +170,7 @@ static void audioTask(void *arg) {
       const int16_t gainQ15 = (int16_t)(gainQ15Fixed >> kGainRampFracBits);
       mixed = (int16_t)(((int32_t)mixed * gainQ15) >> VOLUME_Q15_SHIFT);
       gainQ15Fixed += gainStepFixed;
+      mixed = s_toneFilter.process(mixed);
 
       buffer[frameIndex * 2 + 0] = mixed; // L
       buffer[frameIndex * 2 + 1] = mixed; // R
@@ -181,6 +194,7 @@ void audioTaskBegin() {
 
   applyPatch(0); // matches controls.cpp's initial patchIndex
   s_ampEnvelope.configure(kPatches[0].amp);
+  s_filterEnvelope.configure(kPatches[0].tone.filter);
 
   // The audio task's stack also holds the per-voice frequency, level and
   // sample arrays, sized to MAX_VOICES since any patch can become active at

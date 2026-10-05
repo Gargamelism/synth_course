@@ -127,7 +127,7 @@ Memory: one `Envelope` (~24 B) — the patch's voices share it since they trigge
 CPU: ~3 cycles/frame. Test: `test_envelope.cpp` — gain hits Q15 one after `attackMs`, settles
 at sustain, releases to 0, and a re-trigger mid-release restarts from the current level.
 
-## Phase 2 — brightness that decays with time and rises with loudness
+## Phase 2 — brightness that decays with time and rises with loudness ✅ implemented
 
 A pluck loses its upper harmonics within a few hundred ms; brass gets brighter the louder it
 plays (UNSW brass page: over a crescendo the fundamental rises 8 dB, the 9th harmonic 45 dB).
