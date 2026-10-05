@@ -16,6 +16,9 @@
 // available there once the fixed/reserved ones (OLED on 5/6, onboard LED on
 // 8, BOOT button on 9) are excluded — keeps the amp wiring physically
 // clustered instead of crossing to the far side of the chip.
+// The same three lines also feed a purple PCM5100 DAC module (line out) in
+// parallel with the amp: BCK/LCK/DIN to these pins, SCK to GND (internal
+// PLL), VIN to 3V3, and back solder pads FLT/DEMP/FMT = L, XSMT = H (un-mute).
 #define PIN_I2S_BCK  4
 #define PIN_I2S_LRCK 7
 #define PIN_I2S_DOUT 10

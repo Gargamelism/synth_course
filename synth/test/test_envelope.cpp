@@ -13,7 +13,7 @@ static void runTests() {
   // than restarting from 0.
   {
     Envelope env;
-    env.configure({100, 100, 120, 50}); // A100 D100 R120 S50%
+    env.configure({100, 100, 50, 120}); // A100 D100 R120 S50%
 
     CHECK(env.idle()); // never triggered
 
@@ -52,7 +52,7 @@ static void runTests() {
   // very first block, silence on the very first block after noteOff().
   {
     Envelope env;
-    env.configure({0, 0, 0, 100}); // A0 D0 R0 S100%
+    env.configure({0, 0, 100, 0}); // A0 D0 R0 S100%
 
     env.noteOn();
     CHECK(env.nextBlockGainQ15(kFramesPer100Ms) == VOLUME_Q15_ONE);
@@ -67,7 +67,7 @@ static void runTests() {
   // still nominally "sustaining" — idle() only flips once noteOff() releases.
   {
     Envelope env;
-    env.configure({10, 50, 30, 0}); // A10 D50 R30 S0%
+    env.configure({10, 50, 0, 30}); // A10 D50 R30 S0%
 
     env.noteOn();
     int16_t gain = 0;
@@ -82,7 +82,7 @@ static void runTests() {
   // hold time (e.g. so a stuck switch doesn't sustain forever).
   {
     Envelope env;
-    env.configure({0, 0, 50, 100, 300}); // A0 D0 R50 S100% sustainLengthMs=300
+    env.configure({0, 0, 100, 50, 300}); // A0 D0 R50 S100% sustainLengthMs=300
 
     env.noteOn();
     CHECK(env.nextBlockGainQ15(kFramesPer100Ms) == VOLUME_Q15_ONE);  // 100ms
@@ -110,7 +110,7 @@ static void runTests() {
   // before this field existed) holds indefinitely — no surprise auto-release.
   {
     Envelope env;
-    env.configure({0, 0, 0, 100}); // sustainLengthMs defaults to 0
+    env.configure({0, 0, 100, 0}); // sustainLengthMs defaults to 0
     env.noteOn();
     for (int i = 0; i < 50; i++) {
       CHECK(env.nextBlockGainQ15(kFramesPer100Ms) == VOLUME_Q15_ONE);

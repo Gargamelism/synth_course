@@ -84,7 +84,7 @@ cache and stall the audio task on SPI-flash misses.
   "Global variables" line and fails at link time if it does not fit.
 - Per-voice state is sized `MAX_VOICES` (32) like `s_osc[]`.
 
-## Phase 1 — note-on and amplitude envelope (largest gain; prerequisite for 2, 3, 5)
+## Phase 1 — note-on and amplitude envelope (largest gain; prerequisite for 2, 3, 5) ✅ implemented (commit eb0100a)
 
 A plucked or struck sound cannot exist on a drone: something has to say "a note began".
 
@@ -217,7 +217,7 @@ Freeverb-style: 4 combs (1116, 1188, 1277, 1356 samples at 44.1 kHz) + 2 all-pas
 
 ## Suggested order and what each buys
 
-0 ✅ (RAM trim + budget test) → 1 (note-on + ADSR) → 2 (brightness filter) → 3 (detune +
+0 ✅ (RAM trim + budget test) → 1 ✅ (note-on + ADSR) → 2 (brightness filter) → 3 (detune +
 vibrato) → 4 (Hz formants) → 5 (noise) → 6 (phases) → 7 (reverb). After 1 and 2 the guitar
 and piano patches stop being organ stops; 3 makes the piano a piano and the winds sound
 played; 4–7 are polish.

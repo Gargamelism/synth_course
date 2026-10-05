@@ -27,6 +27,8 @@ void Envelope::enterSustain() {
 }
 
 void Envelope::noteOn() {
+  noteElapsedMs_ = 0.0f;
+  shortNote_ = false;
   if (config_.attackMs == 0) {
     gain_ = 1.0f;
     enterDecayOrSustain();
@@ -36,6 +38,9 @@ void Envelope::noteOn() {
 }
 
 void Envelope::noteOff() {
+  // Latched here, not re-checked per block: noteElapsedMs_ keeps growing
+  // through the release and would flip back to the long release mid-tail.
+  shortNote_ = config_.shortNotesMs > 0 && noteElapsedMs_ < config_.shortNotesMs;
   state_ = STATE_RELEASE;
 }
 
@@ -73,10 +78,11 @@ inline void Envelope::advanceSustain(float blockMs) {
 }
 
 inline void Envelope::advanceRelease(float blockMs) {
-  if (config_.releaseMs == 0) {
+  const float releaseMs = shortNote_ ? config_.shortNoteReleaseMs : config_.releaseMs;
+  if (releaseMs == 0) {
     gain_ = 0.0f;
   } else {
-    gain_ *= expf(-blockMs / config_.releaseMs);
+    gain_ *= expf(-blockMs / releaseMs);
   }
   if (gain_ < kGainSnapEpsilon) {
     gain_ = 0.0f;
@@ -86,6 +92,7 @@ inline void Envelope::advanceRelease(float blockMs) {
 
 int16_t Envelope::nextBlockGainQ15(int frames) {
   const float blockMs = kMsPerSecond * frames / SAMPLE_RATE_HZ;
+  noteElapsedMs_ += blockMs;
 
   switch (state_) {
     case STATE_IDLE:    advanceIdle();           break;

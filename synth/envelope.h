@@ -14,15 +14,12 @@
 struct EnvelopeConfig {
   uint16_t attackMs;
   uint16_t decayMs;
+  uint8_t  sustainPercent;    // 0-100
   uint16_t releaseMs;
-  uint8_t sustainPercent;    // 0-100
-  uint16_t sustainLengthMs = 0; // how long to hold sustain before
-                                 // auto-releasing, as if noteOff() had been
-                                 // called; 0 = sustain indefinitely (until an
-                                 // actual noteOff()) — today's behavior, and
-                                 // every EnvelopeConfig that predates this
-                                 // field gets it for free (aggregate init
-                                 // leaves a trailing member at its default)
+  uint16_t sustainLengthMs = 0; // how long to hold sustain before auto-releasing, as if noteOff() had been called
+  uint16_t shortNotesMs = 0;    // if > 0, a note shorter than this is treated as a short note
+  uint16_t shortNoteAttackMs = 0;  // if shortNotesMs > 0, the attack time to use for a short note
+  uint16_t shortNoteReleaseMs = 0; // if shortNotesMs > 0, the release time to use for a short note
 };
 
 class Envelope {
@@ -67,8 +64,10 @@ private:
   void advanceSustain(float blockMs);
   void advanceRelease(float blockMs);
 
-  EnvelopeConfig config_ = {0, 0, 0, 100};
+  EnvelopeConfig config_ = {0, 0, 100, 0};
   State state_ = STATE_IDLE;
   float gain_ = 0.0f; // 0..1
   float sustainElapsedMs_ = 0.0f; // time in STATE_SUSTAIN since enterSustain()
+  float noteElapsedMs_ = 0.0f; // time since noteOn() — used to detect short notes
+  bool shortNote_ = false;      // latched at noteOff(): held < shortNotesMs
 };

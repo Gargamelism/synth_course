@@ -70,7 +70,7 @@ inline float weightSquare(int h) {
 
 inline float weightTriangle(int h) {
   const int n = h + 1;
-  return !isPowerOfTwo(n) ? 1.0f / (n * n) : 0.0f;
+  return (n % 2 == 1) ? 1.0f / (n * n) : 0.0f;
 }
 
 inline float weightPulsating(int h) {

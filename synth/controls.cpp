@@ -33,7 +33,7 @@ static int s_lastPatchIndexForFreq = -1;       // forces a recompute above on
 // toggle state. Both are plain statics — only controlsUpdate() (loop()'s
 // thread) touches them outside the ISR below.
 static uint8_t s_patchIndex = 0;
-static bool s_distortionEnabled = true;
+static bool s_distortionEnabled = false;
 
 // Raw quadrature edges accumulated by the ISR since the last drain, and the
 // 2-bit A/B state they were measured against. Both written only from the
