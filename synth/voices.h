@@ -173,7 +173,7 @@ static constexpr Patch kPatches[] = {
   {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_CHROMATIC, DIST_HARD_CLIP, "METL1", kEnvOrgan, kToneBrass},
   {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_CHROMATIC, DIST_FOLDBACK, "METL2", kEnvOrgan, kToneBrass},
   {kVoicesGuitar, sizeof(kVoicesGuitar) / sizeof(kVoicesGuitar[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR", kEnvPluck, kTonePluck, kVibratoPlucked},
-  {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR2", kEnvPluck, kTonePluck, kVibratoPlucked},
+  {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR2", kEnvPluck, kTonePluck, kVibratoPlucked},
   {kVoicesPiano, sizeof(kVoicesPiano) / sizeof(kVoicesPiano[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PNO", kEnvStruck, kToneStruck},
   {kVoicesPiano2, sizeof(kVoicesPiano2) / sizeof(kVoicesPiano2[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_NONE, "PNO2", kEnvStruck, kToneStruckT},
   {kVoicesClarinet, sizeof(kVoicesClarinet) / sizeof(kVoicesClarinet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "CLR", kEnvReed, kToneReed, kVibratoReed},
