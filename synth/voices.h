@@ -6,6 +6,7 @@
 #include "scale.h"      // ScaleMode
 #include "envelope.h"   // EnvelopeConfig
 #include "tone.h"       // ToneConfig
+#include "vibrato.h"    // VibratoConfig
 
 // The instrument, in one table. Edit kPatches below to change what the
 // synth plays: one row per patch — a voice table (each with its own pitch
@@ -53,7 +54,11 @@ static constexpr VoiceConfig kVoicesMetal[] = {
 static constexpr VoiceConfig kVoicesGuitar[] = {{0, 0, SPREAD_GUITAR, 100}};
 static constexpr VoiceConfig kVoicesGuitar2[] = {{0, 0, SPREAD_GUITAR, 100},
                                                  {-2, 0, SPREAD_GUITAR, 30}};
-static constexpr VoiceConfig kVoicesPiano[] = {{0, 0, SPREAD_PIANO, 100}};
+// Three strings per note, a few cents apart, like a real piano's unison —
+// their slow beating is much of what makes it read as a piano.
+static constexpr VoiceConfig kVoicesPiano[] = {{0, -2, SPREAD_PIANO, 100},
+                                               {0, 0, SPREAD_PIANO, 100},
+                                               {0, 2, SPREAD_PIANO, 100}};
 static constexpr VoiceConfig kVoicesPiano2[] = {{0, 0, SPREAD_PIANO, 100},
                                                 {-5, 0, SPREAD_PIANO, 30}};
 static constexpr VoiceConfig kVoicesClarinet[] = {{0, 0, SPREAD_CLARINET, 100}};
@@ -135,6 +140,17 @@ static constexpr ToneConfig kToneBrass  = {{80, 0, 100, 100}, 1500, 8000};    //
 static constexpr ToneConfig kToneReed   = {{40, 0, 100, 300}, 2000, 10000};   // mild, mostly volume-driven
 static constexpr ToneConfig kToneStruckT = {{1, 500, 25, 150}, 1000, 10000};    // like pluck, a little slower
 
+// Vibrato: {rateHz, depthCents, delayMs, onsetMs, tremoloPercent} — see
+// vibrato.h. Each note starts plain for delayMs, then the depth fades in.
+static constexpr VibratoConfig kVibratoNone   = {0.0f, 0, 0, 0, 0};
+static constexpr VibratoConfig kVibratoReed   = {5.0f, 10, 250, 300, 0};  // clarinets play with little vibrato
+static constexpr VibratoConfig kVibratoFlute  = {5.5f, 25, 250, 200, 15}; // mostly an amplitude wobble
+static constexpr VibratoConfig kVibratoBrass  = {5.5f, 15, 200, 250, 0};
+static constexpr VibratoConfig kVibratoBowed  = {9.3f, 25, 350, 200, 5};
+static constexpr VibratoConfig kVibratoPlucked  = {4.3f, 35, 350, 200, 5};
+static constexpr VibratoConfig kVibratoAlien  = {14.3f, 255, 10, 200, 30};
+static constexpr VibratoConfig kVibratoSoft  = {3.0f, 10, 250, 300, 5}; // soft, chiff-less start
+
 // A "type of audio": a voice table, how it's pitched, and the distortion
 // flavor matched to it. detuneCents is 0 across kVoicesHarmony/kVoicesMetal,
 // so PITCH_UNISON_DETUNE only does something audible when a table sets it —
@@ -149,30 +165,32 @@ struct Patch
   const char *label;         // shown on the OLED
   EnvelopeConfig amp;        // amplitude envelope, shared by every voice in this patch
   ToneConfig tone = kToneOpen; // brightness filter 
+  VibratoConfig vibrato = kVibratoNone; // pitch/amplitude LFO (vibrato.h)
 };
 
 static constexpr Patch kPatches[] = {
-  {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_SOFT_CLIP, "HARM", kEnvBowed, kToneStruckT},
+  {kVoicesHarmony, sizeof(kVoicesHarmony) / sizeof(kVoicesHarmony[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_SOFT_CLIP, "HARM", kEnvBowed, kToneStruckT, kVibratoBowed},
   {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_CHROMATIC, DIST_HARD_CLIP, "METL1", kEnvOrgan, kToneBrass},
   {kVoicesMetal, sizeof(kVoicesMetal) / sizeof(kVoicesMetal[0]), PITCH_DIATONIC, SCALE_CHROMATIC, DIST_FOLDBACK, "METL2", kEnvOrgan, kToneBrass},
-  {kVoicesGuitar, sizeof(kVoicesGuitar) / sizeof(kVoicesGuitar[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR", kEnvPluck, kTonePluck},
-  {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR2", kEnvPluck, kTonePluck},
+  {kVoicesGuitar, sizeof(kVoicesGuitar) / sizeof(kVoicesGuitar[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "GTR", kEnvPluck, kTonePluck, kVibratoPlucked},
+  {kVoicesGuitar2, sizeof(kVoicesGuitar2) / sizeof(kVoicesGuitar2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_NONE, "GTR2", kEnvPluck, kTonePluck, kVibratoPlucked},
   {kVoicesPiano, sizeof(kVoicesPiano) / sizeof(kVoicesPiano[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PNO", kEnvStruck, kToneStruck},
   {kVoicesPiano2, sizeof(kVoicesPiano2) / sizeof(kVoicesPiano2[0]), PITCH_DIATONIC, SCALE_MINOR, DIST_NONE, "PNO2", kEnvStruck, kToneStruckT},
-  {kVoicesClarinet, sizeof(kVoicesClarinet) / sizeof(kVoicesClarinet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "CLR", kEnvReed, kToneReed},
-  {kVoicesClarinet2, sizeof(kVoicesClarinet2) / sizeof(kVoicesClarinet2[0]), PITCH_DIATONIC, SCALE_MAJOR, DIST_SOFT_CLIP, "CLR2", kEnvReed, kToneReed},
-  {kVoicesFlute, sizeof(kVoicesFlute) / sizeof(kVoicesFlute[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "FLT", kEnvSoft, kToneReed},
-  {kVoicesFlute2, sizeof(kVoicesFlute2) / sizeof(kVoicesFlute2[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_SOFT_CLIP, "FLT2", kEnvSoft, kToneReed},
-  {kVoicesTrumpet, sizeof(kVoicesTrumpet) / sizeof(kVoicesTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TPT", kEnvBrass, kToneBrass},
-  {kVoicesTrumpet2, sizeof(kVoicesTrumpet2) / sizeof(kVoicesTrumpet2[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_SOFT_CLIP, "TPT2", kEnvBrass, kToneBrass},
+  {kVoicesClarinet, sizeof(kVoicesClarinet) / sizeof(kVoicesClarinet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "CLR", kEnvReed, kToneReed, kVibratoReed},
+  {kVoicesClarinet2, sizeof(kVoicesClarinet2) / sizeof(kVoicesClarinet2[0]), PITCH_DIATONIC, SCALE_MAJOR, DIST_SOFT_CLIP, "CLR2", kEnvReed, kToneReed, kVibratoReed},
+  {kVoicesFlute, sizeof(kVoicesFlute) / sizeof(kVoicesFlute[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "FLT", kEnvSoft, kToneReed, kVibratoFlute},
+  {kVoicesFlute2, sizeof(kVoicesFlute2) / sizeof(kVoicesFlute2[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_SOFT_CLIP, "FLT2", kEnvSoft, kToneReed, kVibratoFlute},
+  {kVoicesTrumpet, sizeof(kVoicesTrumpet) / sizeof(kVoicesTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TPT", kEnvBrass, kToneBrass, kVibratoBrass},
+  {kVoicesTrumpet2, sizeof(kVoicesTrumpet2) / sizeof(kVoicesTrumpet2[0]), PITCH_DIATONIC, SCALE_PENTATONIC_MINOR, DIST_SOFT_CLIP, "TPT2", kEnvBrass, kToneBrass, kVibratoBrass},
   {kVoicesTibia, sizeof(kVoicesTibia) / sizeof(kVoicesTibia[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "TIB", kEnvOrgan, kToneStruckT},
   {kVoicesTibia2, sizeof(kVoicesTibia2) / sizeof(kVoicesTibia2[0]), PITCH_DIATONIC, SCALE_MINOR_MELODIC, DIST_SOFT_CLIP, "TIB2", kEnvOrgan, kToneStruckT},
   {kVoicesHammondTrumpet, sizeof(kVoicesHammondTrumpet) / sizeof(kVoicesHammondTrumpet[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HTP", kEnvOrganLong},
-  {kVoicesHammondTrumpet2, sizeof(kVoicesHammondTrumpet2) / sizeof(kVoicesHammondTrumpet2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HTP2"},
+  {kVoicesHammondTrumpet2, sizeof(kVoicesHammondTrumpet2) / sizeof(kVoicesHammondTrumpet2[0]), PITCH_DIATONIC, SCALE_MINOR_HARMONIC, DIST_SOFT_CLIP, "HTP2", kEnvOrganLong},
+  {kVoicesHarsh, sizeof(kVoicesHarsh) / sizeof(kVoicesHarsh[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "HARS", kEnvOrgan, kToneOpen, kVibratoAlien},
   {kVoicesHarsh, sizeof(kVoicesHarsh) / sizeof(kVoicesHarsh[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "HARS", kEnvOrgan},
-  {kVoicesPulse, sizeof(kVoicesPulse) / sizeof(kVoicesPulse[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PULS", kEnvOrgan},
-  {kVoicesCleanSine, sizeof(kVoicesCleanSine) / sizeof(kVoicesCleanSine[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE"},
-  {kVoicesCleanSines, sizeof(kVoicesCleanSines) / sizeof(kVoicesCleanSines[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE2"},
+  {kVoicesPulse, sizeof(kVoicesPulse) / sizeof(kVoicesPulse[0]), PITCH_UNISON_DETUNE, SCALE_NOT_WORKING, DIST_SOFT_CLIP, "PULS", kEnvOrgan, kToneOpen, kVibratoBowed},
+  {kVoicesCleanSine, sizeof(kVoicesCleanSine) / sizeof(kVoicesCleanSine[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE", kEnvOrganLongSoft, kToneOpen, kVibratoSoft},
+  {kVoicesCleanSines, sizeof(kVoicesCleanSines) / sizeof(kVoicesCleanSines[0]), PITCH_DIATONIC, SCALE_MODE_PHRYGIAN, DIST_SOFT_CLIP, "SINE2", kEnvOrganLongSoft, kToneOpen, kVibratoSoft},
 };
 #define NUM_PATCHES ((int)(sizeof(kPatches) / sizeof(kPatches[0])))
 

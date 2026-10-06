@@ -150,7 +150,7 @@ the more faithful model (the UNSW pages give the soft spectra) but it doubles ta
 (Phase 0 + the half-size pyramid would bring it to ~160 KB, still too tight beside a reverb)
 and costs a second lookup plus a lerp per voice per sample.
 
-## Phase 3 — detuned strings and vibrato (mostly table edits)
+## Phase 3 — detuned strings and vibrato (mostly table edits) ✅ implemented
 
 - **Piano chorus**: a real piano has three strings per note, slightly out of tune; the beating
   is a large part of "piano". Change `kVoicesPiano` to three voices in `PITCH_UNISON_DETUNE`
