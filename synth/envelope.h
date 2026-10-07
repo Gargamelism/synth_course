@@ -16,9 +16,9 @@ struct EnvelopeConfig {
   uint16_t decayMs;
   uint8_t  sustainPercent;    // 0-100
   uint16_t releaseMs;
-  uint16_t sustainLengthMs = 0; // how long to hold sustain before auto-releasing, as if noteOff() had been called
   uint16_t shortNotesMs = 0;    // if > 0, a note shorter than this is treated as a short note
   uint16_t shortNoteAttackMs = 0;  // if shortNotesMs > 0, the attack time to use for a short note
+  uint16_t sustainLengthMs = 0; // how long to hold sustain before auto-releasing, as if noteOff() had been called
   uint16_t shortNoteReleaseMs = 0; // if shortNotesMs > 0, the release time to use for a short note
 };
 

@@ -119,16 +119,16 @@ static constexpr VoiceConfig kVoicesCleanSines[] = {
 
 // Amplitude envelope shapes shared across related patches (a patch's voices
 // trigger together, so one Envelope per patch is enough — see audio_task.cpp).
-// The envelope is a simple ADSR + short note handling (attack, decay, sustain%, release, shortLength, shortAttack, shortRelease) with an optional sustainLengthMs that auto-releases after a fixed hold time. 
-static constexpr EnvelopeConfig kEnvOrgan      = {5, 0, 100, 200};     // click-free on/off (pre-Phase-1 default)
-static constexpr EnvelopeConfig kEnvOrganLong  = {5, 0, 80, 400};     // click-free on/off (pre-Phase-1 default)
-static constexpr EnvelopeConfig kEnvOrganLongSoft  = {500, 300, 100, 400};     // click-free on/off (pre-Phase-1 default)
-static constexpr EnvelopeConfig kEnvPluck      = {3, 700, 0, 150};   // plucked string: no sustain, long decay
-static constexpr EnvelopeConfig kEnvStruck     = {2, 1200, 0, 120};  // struck string
-static constexpr EnvelopeConfig kEnvReed       = {40, 60, 85, 2000, 11000, 250, 20, 300};  // reed speaks a little late
-static constexpr EnvelopeConfig kEnvSoft       = {60, 120, 80, 150}; // soft, chiff-less start
-static constexpr EnvelopeConfig kEnvBrass      = {25, 60, 90, 1000, 7000, 250, 20, 500};  // brass bite
-static constexpr EnvelopeConfig kEnvBowed      = {10, 100, 90, 200}; // bowed string: slow attack, long release
+// The envelope is a simple ADSR + short note handling (attack, decay, sustain%, release, shortLength, shortAttack, shortSustain, shortRelease) with an optional sustainLengthMs that auto-releases after a fixed hold time. 
+static constexpr EnvelopeConfig kEnvOrgan      = {5, 0, 100, 200, 250, };     // click-free on/off (pre-Phase-1 default)
+static constexpr EnvelopeConfig kEnvOrganLong  = {5, 0, 80, 400, 250, };     // click-free on/off (pre-Phase-1 default)
+static constexpr EnvelopeConfig kEnvOrganLongSoft  = {500, 300, 100, 400, 250, };     // click-free on/off (pre-Phase-1 default)
+static constexpr EnvelopeConfig kEnvPluck      = {3, 700, 0, 150, 250, };   // plucked string: no sustain, long decay
+static constexpr EnvelopeConfig kEnvStruck     = {2, 1200, 0, 120, 250, };  // struck string
+static constexpr EnvelopeConfig kEnvReed       = {40, 60, 85, 2000, 250, 20, 11000, 300};  // reed speaks a little late
+static constexpr EnvelopeConfig kEnvSoft       = {60, 120, 80, 150, 250, }; // soft, chiff-less start
+static constexpr EnvelopeConfig kEnvBrass      = {25, 60, 90, 1000, 250, 20, 7000, 500};  // brass bite
+static constexpr EnvelopeConfig kEnvBowed      = {10, 100, 90, 200, 250, }; // bowed string: slow attack, long release
 
 // Brightness: {filter envelope, cutoffMinHz, cutoffMaxHz} — see tone.h. The
 // filter envelope sweeps the low-pass cutoff between min and max, scaled
